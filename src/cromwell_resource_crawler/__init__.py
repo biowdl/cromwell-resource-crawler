@@ -17,7 +17,10 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import abc
+import sys
 
+from abc import abstractmethod
 from pathlib import Path
 from typing import Generator, List, Dict, Union, Tuple, Optional
 
@@ -31,44 +34,59 @@ def recursive_iterdir(path: Path) -> Generator[Path, None, None]:
             yield sub_path
 
 
-class Job():
+class Job(abc.ABC):
     def __init__(self, path: Path, id: Tuple[str]):
         self.path: Path = path
         self.id = id
         executions = path / "executions"
         self.stdout_submit: Path = executions / "stdout.submit"
         self.inputs: List[Path] = list(recursive_iterdir(path / "inputs"))
-        self.resources: Dict[str, Union[float, int]] = self.get_resources()
 
-    def get_resources(self):
+    @abstractmethod
+    def get_resources(self) -> Dict[str, Union[float, int]]:
+        pass
+
+
+class SimpleJob(Job):
+    def get_resources(self) -> Dict[str, Union[float, int]]:
         return {}
 
 
-def crawl_workflow_folder(workflow_folder: Path, jobclass: Job = Job,
+def crawl_workflow_folder(workflow_folder: Path, jobclass: Job = SimpleJob,
                           id: Optional[List[str]] = None
                           ) -> Generator[Job, None, None]:
     base_id = id or []
     for uuid in workflow_folder.iterdir():
-        this_id = base_id + [uuid.name]
+        this_id = base_id + [workflow_folder.name, uuid.name]
         for call_folder in uuid.iterdir():
             for job in crawl_call_folder(call_folder, jobclass, this_id):
                 yield job
 
 
-def crawl_call_folder(call_folder: Path, jobclass: Job = Job,
+def crawl_call_folder(call_folder: Path, jobclass: Job = SimpleJob,
                       id: Optional[List[str]] = None
                       ) -> Generator[Job, None, None]:
     base_id = id or []
     this_id = base_id + [call_folder.name]
-    if Path(call_folder, "cacheCopy").exists():
-        return
     if Path(call_folder, "execution").exists():
         yield jobclass(call_folder, tuple(this_id))
-    elif Path(call_folder, "shard-0").exists():
-        for shard in call_folder.iterdir():
-            for job in crawl_call_folder(shard, jobclass, this_id):
-                yield job
+    elif Path(call_folder, "cacheCopy").exists():
+        return
     else:
-        for workflow_folder in call_folder.iterdir():
-            for job in crawl_workflow_folder(workflow_folder, jobclass, this_id):  # noqa: E502
-                yield job
+        for folder in call_folder.iterdir():
+            if folder.name.startswith("shard-"):
+                for job in crawl_call_folder(folder, jobclass, this_id):
+                    yield job
+            else:
+                for job in crawl_workflow_folder(folder, jobclass, this_id):  # noqa: E502
+                    yield job
+
+
+def main():
+    pipeline_folder = Path(sys.argv[1])
+    for job in crawl_workflow_folder(pipeline_folder):
+        print(job.id)
+
+
+if __name__ == "__main__":
+    main()
