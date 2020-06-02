@@ -22,7 +22,7 @@ import sys
 
 from abc import abstractmethod
 from pathlib import Path
-from typing import Generator, List, Dict, Union, Tuple, Optional
+from typing import Generator, List, Dict, Union, Tuple, Optional, Iterable
 
 
 def recursive_iterdir(path: Path) -> Generator[Path, None, None]:
@@ -82,10 +82,22 @@ def crawl_call_folder(call_folder: Path, jobclass: Job = SimpleJob,
                     yield job
 
 
+def job_tree(jobs: Iterable[Job]) -> Dict:
+    tree = {}
+    for job in jobs:
+        id = job.id
+        if len(id) == 1:
+            tree[id[0]] = job.get_resources()
+        else:
+            job.id = id[1:]
+            tree[id[0]] = job_tree([job])
+    return tree
+
+
 def main():
     pipeline_folder = Path(sys.argv[1])
-    for job in crawl_workflow_folder(pipeline_folder):
-        print(job.id)
+    tree = job_tree(crawl_workflow_folder(pipeline_folder))
+    print(tree)
 
 
 if __name__ == "__main__":
