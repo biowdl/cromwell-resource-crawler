@@ -20,7 +20,7 @@
 
 from pathlib import Path
 
-from cromwell_resource_crawler import LocalJob
+from cromwell_resource_crawler import LocalJob, SlurmJob
 
 import pytest
 
@@ -30,6 +30,11 @@ from . import TEST_DATA
 @pytest.fixture(scope="module")
 def localjob() -> LocalJob:
     return LocalJob(TEST_DATA / "call-ConvertDockerTagsFile")
+
+
+@pytest.fixture(scope="module")
+def slurmjob() -> SlurmJob:
+    return SlurmJob(TEST_DATA / "call-ConvertDockerTagsFile")
 
 
 def test_exit_code_correct(localjob):
@@ -51,3 +56,7 @@ def test_output_filesize(localjob):
 
 def test_name(localjob):
     assert localjob.name == "call-ConvertDockerTagsFile"
+
+
+def test_job_id(slurmjob):
+    assert slurmjob.job_id == "362781"

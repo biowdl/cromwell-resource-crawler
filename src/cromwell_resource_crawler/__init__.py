@@ -52,7 +52,9 @@ class Job(abc.ABC):
 
     @abstractmethod
     def get_resources(self) -> Dict[str, Union[float, int]]:
-        pass
+        return {"output_sizes": self.get_output_filesizes(),
+                "input_sizes": self.get_input_filesizes(),
+                "exit_code": self.get_exit_code()}
 
     def outputs(self) -> Generator[Path, None, None]:
         for path, dirs, files in os.walk(self.execution_folder):
@@ -88,9 +90,7 @@ class Job(abc.ABC):
 
 class LocalJob(Job):
     def get_resources(self) -> Dict[str, Union[float, int]]:
-        return {"output_sizes": self.get_output_filesizes(),
-                "input_sizes": self.get_input_filesizes(),
-                "exit_code": self.get_exit_code()}
+        return super().get_resources()
 
 
 DEFAULT_SLURM_JOB_REGEX = re.compile(r"Submitted batch job (\d+).*")
@@ -110,6 +110,8 @@ class SlurmJob(Job):
             raise ValueError(f"Could not get job id from {self.stdout_submit}")
         return match.group(1)
 
+    def get_resources(self) -> Dict[str, Union[float, int]]:
+        return super().get_resources()
 
 
 def crawl_workflow_folder(workflow_folder: Path, jobclass: Job = LocalJob
