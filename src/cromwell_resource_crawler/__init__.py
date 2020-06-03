@@ -25,9 +25,8 @@ import re
 import subprocess
 import sys
 from abc import abstractmethod
-from collections import defaultdict
 from pathlib import Path
-from typing import Dict, Generator, Iterable, Union, Any, List, Optional
+from typing import Any, Dict, Generator, Iterable, List, Optional, Union
 
 from humanize.filesize import naturalsize
 
@@ -109,6 +108,7 @@ class Job(abc.ABC):
         for name in reversed(self.path.parts):
             if name.startswith("call-"):
                 return name
+        raise ValueError(f"No name found for job at path: {self.path}")
 
 
 class LocalJob(Job):
@@ -241,6 +241,7 @@ def jobs_to_tsv(jobs: Iterable[Job]) -> Generator[str, None, None]:
 
 
 JOBS_DICT = dict(slurm=SlurmJob, local=LocalJob)
+
 
 def argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
