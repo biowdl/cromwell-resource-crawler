@@ -24,7 +24,9 @@ import subprocess
 import sys
 from abc import abstractmethod
 from pathlib import Path
-from typing import Dict, Generator, Iterable, Union
+from typing import Dict, Generator, Iterable, Union, Any, List
+
+from humanize.filesize import naturalsize
 
 CROMWELL_EXECUTION_FOLDER_RESERVED_FILES = {
     "stdout",
@@ -55,10 +57,20 @@ class Job(abc.ABC):
         self.name = self._get_name()
 
     @abstractmethod
-    def get_resources(self) -> Dict[str, Union[float, int]]:
-        return {"output_sizes": self.get_output_filesizes(),
-                "input_sizes": self.get_input_filesizes(),
-                "exit_code": self.get_exit_code()}
+    def to_json(self) -> Dict[str, Any]:
+        return {
+            "inputs": self.get_input_filesizes(),
+            "outputs": self.get_output_filesizes()
+        }
+
+    @classmethod
+    @abstractmethod
+    def tsv_header(cls) -> str:
+        pass
+
+    @abstractmethod
+    def tsv_row(self) -> str:
+        pass
 
     def outputs(self) -> Generator[Path, None, None]:
         for path, dirs, files in os.walk(self.execution_folder):
@@ -71,15 +83,17 @@ class Job(abc.ABC):
     def inputs(self) -> Generator[Path, None, None]:
         return get_files_from_dir_recursively(self.inputs_folder)
 
-    def get_input_filesizes(self) -> Dict[str, int]:
+    def get_input_filesizes(self) -> Dict[str, str]:
         return {
-            str(path.relative_to(self.inputs_folder)): path.stat().st_size
+            str(path.relative_to(self.inputs_folder)):
+                naturalsize(path.stat().st_size)
             for path in self.inputs()
         }
 
     def get_output_filesizes(self) -> Dict[str, int]:
         return {
-            str(path.relative_to(self.execution_folder)): path.stat().st_size
+            str(path.relative_to(self.execution_folder)):
+                naturalsize(path.stat().st_size)
             for path in self.outputs()
         }
 
@@ -93,8 +107,18 @@ class Job(abc.ABC):
 
 
 class LocalJob(Job):
-    def get_resources(self) -> Dict[str, Union[float, int]]:
-        return super().get_resources()
+
+    def to_json(self) -> dict[str, Any]:
+        pass
+
+    @classmethod
+    def tsv_header(cls) -> str:
+        raise NotImplementedError("TSV representation not implemented for "
+                                  "local jobs.")
+
+    def tsv_row(self) -> str:
+        raise NotImplementedError("TSV representation not implemented for "
+                                  "local jobs.")
 
 
 DEFAULT_SLURM_JOB_REGEX = re.compile(r"Submitted batch job (\d+).*")
@@ -121,9 +145,11 @@ class SlurmJob(Job):
         super().__init__(path)
         self._job_regex = job_regex
         self.stdout_submit: Path = self.execution_folder / "stdout.submit"
-        self.cluster_properties = [
-            "ReqCPUs", "Timelimit", "Elapsed", "CPUTime", "ReqMem", "MaxRSS",
-            "MaxVMSize", "MaxDiskRead", "MaxDiskWrite"]
+
+    @classmethod
+    def cluster_properties(cls) -> List[str]:
+        return ["ReqCPUs", "Timelimit", "Elapsed", "CPUTime", "ReqMem",
+                "MaxRSS", "MaxVMSize", "MaxDiskRead", "MaxDiskWrite"]
 
     def job_id(self) -> str:
         match = self._job_regex.match(self.stdout_submit.read_text())
@@ -133,7 +159,7 @@ class SlurmJob(Job):
 
     def _cluster_account_command(self) -> str:
         args = ("sacct", "-j", self.job_id(), "-l", "--parsable2",
-                "--format", ",".join(self.cluster_properties))
+                "--format", ",".join(self.cluster_properties()))
         result = subprocess.run(args, stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE, check=True)
 
@@ -150,8 +176,18 @@ class SlurmJob(Job):
         batch_dict["Timelimit"] = total_dict["Timelimit"]
         return batch_dict
 
-    def get_resources(self) -> Dict[str, Union[float, int]]:
-        return super().get_resources()
+    def to_json(self) -> Dict[str, Any]:
+        json_dict = self.get_cluster_accounting()
+        json_dict.update(super().to_json())
+        return json_dict
+
+    @classmethod
+    def tsv_header(cls):
+        return "\t".join(("Path", "Name", *cls.cluster_properties)) + os.linesep  # noqa: E501
+
+    def tsv_row(self):
+        return "\t".join((str(self.path), self.name,
+                          *self.get_cluster_accounting().values())) + os.linesep  # noqa: E501
 
 
 def crawl_workflow_folder(workflow_folder: Path, jobclass: Job = LocalJob
