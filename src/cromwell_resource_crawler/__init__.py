@@ -20,10 +20,9 @@
 import abc
 import os
 import sys
-
 from abc import abstractmethod
 from pathlib import Path
-from typing import Generator, List, Dict, Union, Tuple, Optional, Iterable
+from typing import Dict, Generator, Iterable, Union
 
 CROMWELL_EXECUTION_FOLDER_RESERVED_FILES = {
     "stdout",
@@ -93,8 +92,7 @@ def crawl_workflow_folder(workflow_folder: Path, jobclass: Job = LocalJob
             yield from crawl_call_folder(call_folder, jobclass)
 
 
-def crawl_call_folder(call_folder: Path, jobclass: Job = LocalJob,
-                      id: Optional[List[str]] = None
+def crawl_call_folder(call_folder: Path, jobclass: Job = LocalJob
                       ) -> Generator[Job, None, None]:
     if Path(call_folder, "execution").exists():
         yield jobclass(call_folder)
