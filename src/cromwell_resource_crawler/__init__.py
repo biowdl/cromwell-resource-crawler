@@ -227,11 +227,19 @@ def jobs_to_json_dict(jobs: Iterable[Job],
     return json_dict
 
 
+def jobs_to_tsv(jobs: Iterable[Job]) -> Generator[str, None, None]:
+    job_iter = iter(jobs)
+    first_job = next(job_iter)
+    yield first_job.tsv_header()
+    yield first_job.tsv_row()
+    for job in job_iter:
+        yield job.tsv_row()
+
+
 def main():
     pipeline_folder = Path(sys.argv[1])
-    print(jobs_to_json_dict(crawl_workflow_folder(pipeline_folder),
-                            pipeline_folder))
-
+    for line in jobs_to_tsv(crawl_workflow_folder(pipeline_folder)):
+        print(line)
 
 
 if __name__ == "__main__":
