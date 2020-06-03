@@ -59,4 +59,4 @@ def test_name(localjob):
 
 
 def test_job_id(slurmjob):
-    assert slurmjob.job_id == "362781"
+    assert slurmjob.job_id() == "362781"

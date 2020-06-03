@@ -121,18 +121,18 @@ class SlurmJob(Job):
         super().__init__(path)
         self._job_regex = job_regex
         self.stdout_submit: Path = self.execution_folder / "stdout.submit"
-        self.job_id = self._get_job_id()
 
-    def _get_job_id(self) -> str:
+    def job_id(self) -> str:
         match = self._job_regex.match(self.stdout_submit.read_text())
         if match is None:
             raise ValueError(f"Could not get job id from {self.stdout_submit}")
         return match.group(1)
 
     def _cluster_account_command(self) -> str:
-        args = ("sacct", "-j" , self.job_id, "-l", "--parsable2",
+        args = ("sacct", "-j" , self.job_id(), "-l", "--parsable2",
                 "--format",
-                "CPUTime,Elapsed,MaxDiskRead,MaxDiskWrite,MaxRSS,MaxVMSize,Timelimit,ReqMem,ReqCPUs")
+                "ReqCPUs,Timelimit,Elapsed,CPUTime,ReqMem,MaxRSS,MaxVMSize,"
+                "MaxDiskRead,MaxDiskWrite")
         result = subprocess.run(args, stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE, check=True)
 
