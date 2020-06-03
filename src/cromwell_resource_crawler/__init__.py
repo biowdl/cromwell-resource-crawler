@@ -23,8 +23,9 @@ import re
 import subprocess
 import sys
 from abc import abstractmethod
+from collections import defaultdict
 from pathlib import Path
-from typing import Dict, Generator, Iterable, Union, Any, List
+from typing import Dict, Generator, Iterable, Union, Any, List, Optional
 
 from humanize.filesize import naturalsize
 
@@ -108,8 +109,8 @@ class Job(abc.ABC):
 
 class LocalJob(Job):
 
-    def to_json(self) -> dict[str, Any]:
-        pass
+    def to_json(self) -> Dict[str, Any]:
+        return super().to_json()
 
     @classmethod
     def tsv_header(cls) -> str:
@@ -211,22 +212,26 @@ def crawl_call_folder(call_folder: Path, jobclass: Job = LocalJob
                 yield from crawl_workflow_folder(folder, jobclass)
 
 
-def job_tree(jobs: Iterable[Job]) -> Dict:
-    tree = {}
+def jobs_to_json_dict(jobs: Iterable[Job],
+                      start_path: Optional[Path] = None) -> Dict:
+    json_dict = {}
     for job in jobs:
-        id = job.id
-        if len(id) == 1:
-            tree[id[0]] = job.get_resources()
-        else:
-            job.id = id[1:]
-            tree[id[0]] = job_tree([job])
-    return tree
+        job_path = (job.path if start_path is None
+                    else job.path.relative_to(start_path))
+        part_dict = json_dict
+        for part in job_path.parts[:-1]:
+            if part not in part_dict:
+                part_dict[part] = {}
+            part_dict = part_dict[part]
+        part_dict[job_path.parts[-1]] = job.to_json()
+    return json_dict
 
 
 def main():
     pipeline_folder = Path(sys.argv[1])
-    for job in crawl_workflow_folder(pipeline_folder):
-        print(job.path)
+    print(jobs_to_json_dict(crawl_workflow_folder(pipeline_folder),
+                            pipeline_folder))
+
 
 
 if __name__ == "__main__":
