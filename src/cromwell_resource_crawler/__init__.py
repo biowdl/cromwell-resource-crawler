@@ -48,6 +48,7 @@ class Job(abc.ABC):
         self.execution_folder: Path = path / "execution"
         self.inputs_folder: Path = path / "inputs"
         self.stdout_submit: Path = self.execution_folder / "stdout.submit"
+        self.name = self._get_name()
 
     @abstractmethod
     def get_resources(self) -> Dict[str, Union[float, int]]:
@@ -78,6 +79,11 @@ class Job(abc.ABC):
 
     def get_exit_code(self) -> int:
         return int(Path(self.execution_folder, "rc").read_text())
+
+    def _get_name(self) -> str:
+        for name in reversed(self.path.parts):
+            if name.startswith("call-"):
+                return name
 
 
 class LocalJob(Job):

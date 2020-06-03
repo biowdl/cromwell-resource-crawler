@@ -48,3 +48,6 @@ def test_output_filesize(localjob):
         "nested_outputs/dummy_output": 34
     }
 
+
+def test_name(localjob):
+    assert localjob.name == "call-ConvertDockerTagsFile"
