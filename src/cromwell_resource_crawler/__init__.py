@@ -45,16 +45,16 @@ def get_files_from_dir_recursively(path: Union[os.PathLike, str]
 class Job(abc.ABC):
     def __init__(self, path: Path):
         self.path: Path = path
-        self.executions: Path = path / "executions"
-        self.inputs_path: Path = path / "inputs"
-        self.stdout_submit: Path = self.executions / "stdout.submit"
+        self.execution_folder: Path = path / "execution"
+        self.inputs_folder: Path = path / "inputs"
+        self.stdout_submit: Path = self.execution_folder / "stdout.submit"
 
     @abstractmethod
     def get_resources(self) -> Dict[str, Union[float, int]]:
         pass
 
     def outputs(self) -> Generator[Path, None, None]:
-        for path, dirs, files in os.walk(self.executions):
+        for path, dirs, files in os.walk(self.execution_folder):
             for file in files:
                 if file not in CROMWELL_EXECUTION_FOLDER_RESERVED_FILES:
                     yield Path(path, file)
@@ -62,22 +62,22 @@ class Job(abc.ABC):
                 yield from get_files_from_dir_recursively(Path(path, dir))
 
     def inputs(self) -> Generator[Path, None, None]:
-        return get_files_from_dir_recursively(self.inputs_path)
+        return get_files_from_dir_recursively(self.inputs_folder)
 
     def get_input_filesizes(self) -> Dict[str, int]:
         return {
-            str(path.relative_to(self.inputs_path)): path.stat().st_size
+            str(path.relative_to(self.inputs_folder)): path.stat().st_size
             for path in self.inputs()
         }
 
     def get_output_filesizes(self) -> Dict[str, int]:
         return {
-            str(path.relative_to(self.executions)): path.stat().st_size
+            str(path.relative_to(self.execution_folder)): path.stat().st_size
             for path in self.outputs()
         }
 
     def get_exit_code(self) -> int:
-        return int(Path(self.executions, "rc").read_text())
+        return int(Path(self.execution_folder, "rc").read_text())
 
 
 class LocalJob(Job):
