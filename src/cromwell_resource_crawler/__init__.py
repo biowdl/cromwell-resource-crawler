@@ -18,6 +18,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 import abc
+import argparse
+import json
 import os
 import re
 import subprocess
@@ -28,6 +30,8 @@ from pathlib import Path
 from typing import Dict, Generator, Iterable, Union, Any, List, Optional
 
 from humanize.filesize import naturalsize
+
+DEFAULT_OUTPUT = "/dev/stdout" if sys.platform in ["linux", "darwin"] else None
 
 CROMWELL_EXECUTION_FOLDER_RESERVED_FILES = {
     "stdout",
@@ -236,10 +240,32 @@ def jobs_to_tsv(jobs: Iterable[Job]) -> Generator[str, None, None]:
         yield job.tsv_row()
 
 
+JOBS_DICT = dict(slurm=SlurmJob, local=LocalJob)
+
+def argument_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("workflow_dir", metavar="<WORKFLOW_DIR>", type=str,
+                        help="Workflow directory. Such as "
+                             "cromwell-executions/<WORKFLOW_DIR>.")
+    parser.add_argument("-b", "--backend", type=str, choices=JOBS_DICT.keys(),
+                        default="local")
+    parser.add_argument("-f", "--output-format", type=str,
+                        choices=["json", "tsv"], default="json")
+    parser.add_argument("-o", "--output", default=DEFAULT_OUTPUT)
+    return parser
+
+
 def main():
-    pipeline_folder = Path(sys.argv[1])
-    for line in jobs_to_tsv(crawl_workflow_folder(pipeline_folder)):
-        print(line)
+    args = argument_parser().parse_args()
+    workflow_folder = Path(args.workflow_dir)
+    jobs = crawl_workflow_folder(workflow_folder,
+                                 jobclass=JOBS_DICT[args.backend])
+    with open(args.output, "wt") as output_h:
+        if args.output_format == "json":
+            json.dump(jobs_to_json_dict(jobs, workflow_folder), output_h)
+        elif args.output_format == "tsv":
+            for line in jobs_to_tsv(jobs):
+                output_h.write(line)
 
 
 if __name__ == "__main__":
