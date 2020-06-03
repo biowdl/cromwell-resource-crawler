@@ -90,8 +90,7 @@ def crawl_workflow_folder(workflow_folder: Path, jobclass: Job = LocalJob
                           ) -> Generator[Job, None, None]:
     for uuid in workflow_folder.iterdir():
         for call_folder in uuid.iterdir():
-            for job in crawl_call_folder(call_folder, jobclass):
-                yield job
+            yield from crawl_call_folder(call_folder, jobclass)
 
 
 def crawl_call_folder(call_folder: Path, jobclass: Job = LocalJob,
@@ -104,11 +103,9 @@ def crawl_call_folder(call_folder: Path, jobclass: Job = LocalJob,
     else:
         for folder in call_folder.iterdir():
             if folder.name.startswith("shard-"):
-                for job in crawl_call_folder(folder, jobclass):
-                    yield job
+                yield from crawl_call_folder(folder, jobclass)
             else:
-                for job in crawl_workflow_folder(folder, jobclass):
-                    yield job
+                yield from crawl_workflow_folder(folder, jobclass)
 
 
 def job_tree(jobs: Iterable[Job]) -> Dict:
