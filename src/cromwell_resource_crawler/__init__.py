@@ -19,10 +19,11 @@
 # SOFTWARE.
 import abc
 import os
+import re
 import sys
 from abc import abstractmethod
 from pathlib import Path
-from typing import Dict, Generator, Iterable, Union
+from typing import Dict, Generator, Iterable, Union, Pattern
 
 CROMWELL_EXECUTION_FOLDER_RESERVED_FILES = {
     "stdout",
@@ -47,7 +48,6 @@ class Job(abc.ABC):
         self.path: Path = path
         self.execution_folder: Path = path / "execution"
         self.inputs_folder: Path = path / "inputs"
-        self.stdout_submit: Path = self.execution_folder / "stdout.submit"
         self.name = self._get_name()
 
     @abstractmethod
@@ -88,7 +88,28 @@ class Job(abc.ABC):
 
 class LocalJob(Job):
     def get_resources(self) -> Dict[str, Union[float, int]]:
-        return {}
+        return {"output_sizes": self.get_output_filesizes(),
+                "input_sizes": self.get_input_filesizes(),
+                "exit_code": self.get_exit_code()}
+
+
+DEFAULT_SLURM_JOB_REGEX = re.compile(r"Submitted batch job (\d+).*")
+
+
+class SlurmJob(Job):
+    def __init__(self, path: Path,
+                 job_regex: re.Pattern = DEFAULT_SLURM_JOB_REGEX):
+        super().__init__(path)
+        self._job_regex = job_regex
+        self.stdout_submit: Path = self.execution_folder / "stdout.submit"
+        self.job_id = self._get_job_id()
+
+    def _get_job_id(self) -> str:
+        match = self._job_regex.match(self.stdout_submit.read_text())
+        if match is None:
+            raise ValueError(f"Could not get job id from {self.stdout_submit}")
+        return match.group(1)
+
 
 
 def crawl_workflow_folder(workflow_folder: Path, jobclass: Job = LocalJob
