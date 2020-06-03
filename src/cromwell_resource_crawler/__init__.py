@@ -44,9 +44,8 @@ def get_files_from_dir_recursively(path: Union[os.PathLike, str]
 
 
 class Job(abc.ABC):
-    def __init__(self, path: Path, id: Tuple[str]):
+    def __init__(self, path: Path):
         self.path: Path = path
-        self.id = id
         self.executions: Path = path / "executions"
         self.inputs_path: Path = path / "inputs"
         self.stdout_submit: Path = self.executions / "stdout.submit"
@@ -87,33 +86,28 @@ class LocalJob(Job):
         return {}
 
 
-def crawl_workflow_folder(workflow_folder: Path, jobclass: Job = LocalJob,
-                          id: Optional[List[str]] = None
+def crawl_workflow_folder(workflow_folder: Path, jobclass: Job = LocalJob
                           ) -> Generator[Job, None, None]:
-    base_id = id or []
     for uuid in workflow_folder.iterdir():
-        this_id = base_id + [workflow_folder.name, uuid.name]
         for call_folder in uuid.iterdir():
-            for job in crawl_call_folder(call_folder, jobclass, this_id):
+            for job in crawl_call_folder(call_folder, jobclass):
                 yield job
 
 
 def crawl_call_folder(call_folder: Path, jobclass: Job = LocalJob,
                       id: Optional[List[str]] = None
                       ) -> Generator[Job, None, None]:
-    base_id = id or []
-    this_id = base_id + [call_folder.name]
     if Path(call_folder, "execution").exists():
-        yield jobclass(call_folder, tuple(this_id))
+        yield jobclass(call_folder)
     elif Path(call_folder, "cacheCopy").exists():
         return
     else:
         for folder in call_folder.iterdir():
             if folder.name.startswith("shard-"):
-                for job in crawl_call_folder(folder, jobclass, this_id):
+                for job in crawl_call_folder(folder, jobclass):
                     yield job
             else:
-                for job in crawl_workflow_folder(folder, jobclass, this_id):  # noqa: E502
+                for job in crawl_workflow_folder(folder, jobclass):
                     yield job
 
 
@@ -131,8 +125,8 @@ def job_tree(jobs: Iterable[Job]) -> Dict:
 
 def main():
     pipeline_folder = Path(sys.argv[1])
-    tree = job_tree(crawl_workflow_folder(pipeline_folder))
-    print(tree)
+    for job in crawl_workflow_folder(pipeline_folder):
+        print(job.path)
 
 
 if __name__ == "__main__":
