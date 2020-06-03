@@ -1,0 +1,45 @@
+#!/bin/bash
+
+cd /cromwell-executions/RNAseq/82f8c9a5-384c-46fd-8ca0-fc2909f8922c/call-ConvertDockerTagsFile/execution
+tmpDir=$(mkdir -p "/cromwell-executions/RNAseq/82f8c9a5-384c-46fd-8ca0-fc2909f8922c/call-ConvertDockerTagsFile/tmp.45f999fc" && echo "/cromwell-executions/RNAseq/82f8c9a5-384c-46fd-8ca0-fc2909f8922c/call-ConvertDockerTagsFile/tmp.45f999fc")
+chmod 777 "$tmpDir"
+export _JAVA_OPTIONS=-Djava.io.tmpdir="$tmpDir"
+export TMPDIR="$tmpDir"
+export HOME="$HOME"
+(
+cd /cromwell-executions/RNAseq/82f8c9a5-384c-46fd-8ca0-fc2909f8922c/call-ConvertDockerTagsFile/execution
+
+)
+out82f8c9a5="${tmpDir}/out.$$" err82f8c9a5="${tmpDir}/err.$$"
+mkfifo "$out82f8c9a5" "$err82f8c9a5"
+trap 'rm "$out82f8c9a5" "$err82f8c9a5"' EXIT
+tee '/cromwell-executions/RNAseq/82f8c9a5-384c-46fd-8ca0-fc2909f8922c/call-ConvertDockerTagsFile/execution/stdout' < "$out82f8c9a5" &
+tee '/cromwell-executions/RNAseq/82f8c9a5-384c-46fd-8ca0-fc2909f8922c/call-ConvertDockerTagsFile/execution/stderr' < "$err82f8c9a5" >&2 &
+(
+cd /cromwell-executions/RNAseq/82f8c9a5-384c-46fd-8ca0-fc2909f8922c/call-ConvertDockerTagsFile/execution
+
+
+set -e
+mkdir -p "$(dirname ./dockerImages.json)"
+python <<CODE
+import json
+import yaml
+with open("/cromwell-executions/RNAseq/82f8c9a5-384c-46fd-8ca0-fc2909f8922c/call-ConvertDockerTagsFile/inputs/1599980398/dockerImages.yml", "r") as input_yaml:
+    content = yaml.load(input_yaml)
+with open("./dockerImages.json", "w") as output_json:
+    json.dump(content, output_json)
+CODE
+)  > "$out82f8c9a5" 2> "$err82f8c9a5"
+echo $? > /cromwell-executions/RNAseq/82f8c9a5-384c-46fd-8ca0-fc2909f8922c/call-ConvertDockerTagsFile/execution/rc.tmp
+(
+# add a .file in every empty directory to facilitate directory delocalization on the cloud
+cd /cromwell-executions/RNAseq/82f8c9a5-384c-46fd-8ca0-fc2909f8922c/call-ConvertDockerTagsFile/execution
+find . -type d -exec sh -c '[ -z "$(ls -A '"'"'{}'"'"')" ] && touch '"'"'{}'"'"'/.file' \;
+)
+(
+cd /cromwell-executions/RNAseq/82f8c9a5-384c-46fd-8ca0-fc2909f8922c/call-ConvertDockerTagsFile/execution
+sync
+
+
+)
+mv /cromwell-executions/RNAseq/82f8c9a5-384c-46fd-8ca0-fc2909f8922c/call-ConvertDockerTagsFile/execution/rc.tmp /cromwell-executions/RNAseq/82f8c9a5-384c-46fd-8ca0-fc2909f8922c/call-ConvertDockerTagsFile/execution/rc
