@@ -40,13 +40,12 @@ setup(
     classifiers=[
         "Programming Language :: Python :: 3 :: Only",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "License :: OSI Approved :: MIT License"
     ],
-    python_requires=">=3.5",  # Because we use typing.
+    python_requires=">=3.6",  # Because os methods accept pathlike objects.
     entry_points={
         'console_scripts': [
             'cromwell-resource-crawler = cromwell_resource_crawler:main',

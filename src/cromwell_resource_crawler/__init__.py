@@ -18,41 +18,76 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 import abc
+import os
 import sys
 
 from abc import abstractmethod
 from pathlib import Path
 from typing import Generator, List, Dict, Union, Tuple, Optional, Iterable
 
+CROMWELL_EXECUTION_FOLDER_RESERVED_FILES = {
+    "stdout",
+    "stderr",
+    "stdout.submit",
+    "stderr.submit",
+    "script",
+    "script.submit",
+    "rc"
+}
 
-def recursive_iterdir(path: Path) -> Generator[Path, None, None]:
-    for sub_path in path.iterdir():
-        if sub_path.is_dir():
-            for sub_sub_path in recursive_iterdir(sub_path):
-                yield sub_sub_path
-        else:
-            yield sub_path
+
+def get_files_from_dir_recursively(path: Union[os.PathLike, str]
+                                   ) -> Generator[Path, None, None]:
+    for path, dirs, files in os.walk(path):
+        for file in files:
+            yield Path(path, file)
 
 
 class Job(abc.ABC):
     def __init__(self, path: Path, id: Tuple[str]):
         self.path: Path = path
         self.id = id
-        executions = path / "executions"
-        self.stdout_submit: Path = executions / "stdout.submit"
-        self.inputs: List[Path] = list(recursive_iterdir(path / "inputs"))
+        self.executions: Path = path / "executions"
+        self.inputs_path: Path = path / "inputs"
+        self.stdout_submit: Path = self.executions / "stdout.submit"
 
     @abstractmethod
     def get_resources(self) -> Dict[str, Union[float, int]]:
         pass
 
+    def outputs(self) -> Generator[Path, None, None]:
+        for path, dirs, files in os.walk(self.executions):
+            for file in files:
+                if file not in CROMWELL_EXECUTION_FOLDER_RESERVED_FILES:
+                    yield Path(path, file)
+            for dir in dirs:
+                yield from get_files_from_dir_recursively(Path(path, dir))
 
-class SimpleJob(Job):
+    def inputs(self) -> Generator[Path, None, None]:
+        return get_files_from_dir_recursively(self.inputs_path)
+
+    def get_input_filesizes(self) -> Dict[str, int]:
+        return {
+            str(path.relative_to(self.inputs_path)): path.stat().st_size
+            for path in self.inputs()
+        }
+
+    def get_output_filesizes(self) -> Dict[str, int]:
+        return {
+            str(path.relative_to(self.executions)): path.stat().st_size
+            for path in self.outputs()
+        }
+
+    def get_exit_code(self) -> int:
+        return int(Path(self.executions, "rc").read_text())
+
+
+class LocalJob(Job):
     def get_resources(self) -> Dict[str, Union[float, int]]:
         return {}
 
 
-def crawl_workflow_folder(workflow_folder: Path, jobclass: Job = SimpleJob,
+def crawl_workflow_folder(workflow_folder: Path, jobclass: Job = LocalJob,
                           id: Optional[List[str]] = None
                           ) -> Generator[Job, None, None]:
     base_id = id or []
@@ -63,7 +98,7 @@ def crawl_workflow_folder(workflow_folder: Path, jobclass: Job = SimpleJob,
                 yield job
 
 
-def crawl_call_folder(call_folder: Path, jobclass: Job = SimpleJob,
+def crawl_call_folder(call_folder: Path, jobclass: Job = LocalJob,
                       id: Optional[List[str]] = None
                       ) -> Generator[Job, None, None]:
     base_id = id or []
