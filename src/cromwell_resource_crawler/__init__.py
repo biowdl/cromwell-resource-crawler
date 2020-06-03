@@ -24,7 +24,7 @@ import subprocess
 import sys
 from abc import abstractmethod
 from pathlib import Path
-from typing import Dict, Generator, Iterable, Union, Pattern
+from typing import Dict, Generator, Iterable, Union
 
 CROMWELL_EXECUTION_FOLDER_RESERVED_FILES = {
     "stdout",
@@ -121,6 +121,9 @@ class SlurmJob(Job):
         super().__init__(path)
         self._job_regex = job_regex
         self.stdout_submit: Path = self.execution_folder / "stdout.submit"
+        self.cluster_properties = [
+            "ReqCPUs", "Timelimit", "Elapsed", "CPUTime", "ReqMem", "MaxRSS",
+            "MaxVMSize", "MaxDiskRead", "MaxDiskWrite"]
 
     def job_id(self) -> str:
         match = self._job_regex.match(self.stdout_submit.read_text())
@@ -129,16 +132,14 @@ class SlurmJob(Job):
         return match.group(1)
 
     def _cluster_account_command(self) -> str:
-        args = ("sacct", "-j" , self.job_id(), "-l", "--parsable2",
-                "--format",
-                "ReqCPUs,Timelimit,Elapsed,CPUTime,ReqMem,MaxRSS,MaxVMSize,"
-                "MaxDiskRead,MaxDiskWrite")
+        args = ("sacct", "-j", self.job_id(), "-l", "--parsable2",
+                "--format", ",".join(self.cluster_properties))
         result = subprocess.run(args, stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE, check=True)
 
         return result.stdout.decode()
 
-    def get_cluster_accounting(self) -> Dict[str,str]:
+    def get_cluster_accounting(self) -> Dict[str, str]:
         cluster_accounting = self._cluster_account_command()
         lines = cluster_accounting.splitlines(keepends=False)
         headers = lines[0].split("|")
