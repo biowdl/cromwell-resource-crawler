@@ -20,6 +20,7 @@
 import abc
 import os
 import re
+import subprocess
 import sys
 from abc import abstractmethod
 from pathlib import Path
@@ -32,6 +33,9 @@ CROMWELL_EXECUTION_FOLDER_RESERVED_FILES = {
     "stderr.submit",
     "script",
     "script.submit",
+    "script.check",
+    "stdout.check",
+    "stderr.check",
     "rc"
 }
 
@@ -95,6 +99,21 @@ class LocalJob(Job):
 
 DEFAULT_SLURM_JOB_REGEX = re.compile(r"Submitted batch job (\d+).*")
 
+SLURM_SUFFIXES = {"K": 1024, "M": 1024**2, "G": 1024**3, "T": 1024**4}
+
+
+def slurm_number(value: str) -> int:
+    for suffix, multiplier in SLURM_SUFFIXES.items():
+        if value.endswith(suffix):
+
+            return int(value.rstrip(suffix)) * multiplier
+    return int(value)
+
+
+def slurm_time(value: str) -> int:
+    hours, minutes, seconds = value.split(":")
+    return int(hours) * 3600 + int(minutes) * 60 + int(seconds)
+
 
 class SlurmJob(Job):
     def __init__(self, path: Path,
@@ -109,6 +128,26 @@ class SlurmJob(Job):
         if match is None:
             raise ValueError(f"Could not get job id from {self.stdout_submit}")
         return match.group(1)
+
+    def _cluster_account_command(self) -> str:
+        args = ("sacct", "-j" , self.job_id, "-l", "--parsable2",
+                "--format",
+                "CPUTime,Elapsed,MaxDiskRead,MaxDiskWrite,MaxRSS,MaxVMSize,Timelimit,ReqMem,ReqCPUs")
+        result = subprocess.run(args, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE, check=True)
+
+        return result.stdout.decode()
+
+    def get_cluster_accounting(self) -> Dict[str,str]:
+        cluster_accounting = self._cluster_account_command()
+        lines = cluster_accounting.splitlines(keepends=False)
+        headers = lines[0].split("|")
+        total_usage = lines[1].split("|")
+        batch_usage = lines[2].split("|")
+        total_dict = dict(zip(headers, total_usage))
+        batch_dict = dict(zip(headers, batch_usage))
+        batch_dict["Timelimit"] = total_dict["Timelimit"]
+        return batch_dict
 
     def get_resources(self) -> Dict[str, Union[float, int]]:
         return super().get_resources()
