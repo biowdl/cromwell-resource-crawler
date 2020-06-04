@@ -271,7 +271,7 @@ def argument_parser() -> argparse.ArgumentParser:
     parser.add_argument("-f", "--output-format", type=str,
                         choices=["json", "tsv"], default="json")
     parser.add_argument("-o", "--output", default=DEFAULT_OUTPUT,
-                        required=bool(DEFAULT_OUTPUT))
+                        required=not bool(DEFAULT_OUTPUT))
     parser.add_argument("-n", "--name", required=False,
                         help="Select only jobs named 'call-NAME'.")
     parser.add_argument("-p", "--filter", metavar="STRING",
