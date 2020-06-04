@@ -195,6 +195,22 @@ class SlurmJob(Job):
                           *self.get_cluster_accounting().values())) + os.linesep  # noqa: E501
 
 
+def crawl_folder(folder: Path, jobclass: Job = LocalJob
+                 ) -> Generator[Job, None, None]:
+    if not folder.is_dir():
+        raise ValueError(f"{folder} is not a directory!")
+    if folder.name == "cromwell-executions":
+        for path in os.scandir(folder):  # type: os.DirEntry
+            if not path.is_dir():
+                continue
+            if "-" not in path.name:
+                yield from crawl_workflow_folder(Path(path.name), jobclass)
+    elif folder.name.startswith("call-"):
+        yield from crawl_call_folder(folder, jobclass)
+    else:
+        yield from crawl_workflow_folder(folder, jobclass)
+
+
 def crawl_workflow_folder(workflow_folder: Path, jobclass: Job = LocalJob
                           ) -> Generator[Job, None, None]:
     for uuid in workflow_folder.iterdir():
@@ -245,22 +261,31 @@ JOBS_DICT = dict(slurm=SlurmJob, local=LocalJob)
 
 def argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
-    parser.add_argument("workflow_dir", metavar="<WORKFLOW_DIR>", type=str,
+    parser.add_argument("workflow_dir", type=str,
                         help="Workflow directory. Such as "
-                             "cromwell-executions/<WORKFLOW_DIR>.")
+                             "cromwell-executions/WORKFLOW_DIR.")
     parser.add_argument("-b", "--backend", type=str, choices=JOBS_DICT.keys(),
                         default="local")
     parser.add_argument("-f", "--output-format", type=str,
                         choices=["json", "tsv"], default="json")
-    parser.add_argument("-o", "--output", default=DEFAULT_OUTPUT)
+    parser.add_argument("-o", "--output", default=DEFAULT_OUTPUT,
+                        required=bool(DEFAULT_OUTPUT))
+    parser.add_argument("-n", "--name", required=False,
+                        help="Select only jobs named 'call-NAME'.")
+    parser.add_argument("-p", "--filter", metavar="STRING",
+                        help="Select only jobs where STRING is part of the "
+                             "path.")
     return parser
 
 
 def main():
     args = argument_parser().parse_args()
     workflow_folder = Path(args.workflow_dir)
-    jobs = crawl_workflow_folder(workflow_folder,
-                                 jobclass=JOBS_DICT[args.backend])
+    jobs = crawl_folder(workflow_folder, jobclass=JOBS_DICT[args.backend])
+    if args.name is not None:
+        jobs = (job for job in jobs if job.name == "call-" + args.name)
+    if args.filter is not None:
+        jobs = (job for job in jobs if args.filter in str(job.path))
     with open(args.output, "wt") as output_h:
         if args.output_format == "json":
             json.dump(jobs_to_json_dict(jobs, workflow_folder), output_h)
