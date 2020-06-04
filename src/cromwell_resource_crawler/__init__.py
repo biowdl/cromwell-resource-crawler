@@ -88,17 +88,17 @@ class Job(abc.ABC):
         return get_files_from_dir_recursively(self.inputs_folder)
 
     def get_input_filesizes(self) -> Dict[str, str]:
-        return {
-            str(path.relative_to(self.inputs_folder)):
-                naturalsize(path.stat().st_size)
-            for path in self.inputs()
-        }
+        return self._size_calculation(self.inputs(), self.inputs_folder)
 
     def get_output_filesizes(self) -> Dict[str, int]:
+        return self._size_calculation(self.outputs(), self.execution_folder)
+
+    @staticmethod
+    def _size_calculation(files: Iterable[Path], relative_to: Path):
         return {
-            str(path.relative_to(self.execution_folder)):
-                naturalsize(path.stat().st_size)
-            for path in self.outputs()
+            str(path.relative_to(relative_to)):
+                naturalsize(path.stat().st_size, binary=True)
+            for path in files
         }
 
     def get_exit_code(self) -> int:
@@ -180,7 +180,8 @@ class SlurmJob(Job):
         batch_dict = dict(zip(headers, batch_usage))
         batch_dict["Timelimit"] = total_dict["Timelimit"]
         for key in ["MaxRSS", "MaxVMSize", "MaxDiskRead", "MaxDiskWrite"]:
-            batch_dict[key] = naturalsize(slurm_number(batch_dict[key]))
+            batch_dict[key] = naturalsize(slurm_number(batch_dict[key]),
+                                          binary=True)
         return batch_dict
 
     def to_json(self) -> Dict[str, Any]:
