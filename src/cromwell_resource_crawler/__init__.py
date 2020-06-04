@@ -67,9 +67,9 @@ class Job(abc.ABC):
             "outputs": self.get_output_filesizes()
         }
 
-    @classmethod
+    @staticmethod
     @abstractmethod
-    def tsv_header(cls) -> str:
+    def tsv_header() -> str:
         pass
 
     @abstractmethod
@@ -116,8 +116,8 @@ class LocalJob(Job):
     def to_json(self) -> Dict[str, Any]:
         return super().to_json()
 
-    @classmethod
-    def tsv_header(cls) -> str:
+    @staticmethod
+    def tsv_header() -> str:
         raise NotImplementedError("TSV representation not implemented for "
                                   "local jobs.")
 
@@ -128,6 +128,9 @@ class LocalJob(Job):
 
 DEFAULT_SLURM_JOB_REGEX = re.compile(r"Submitted batch job (\d+).*")
 
+
+# SLURM uses a base of 1024
+# https://github.com/SchedMD/slurm/blob/753db1d52c9bb91f970d83aa9418a6faddf93461/src/common/slurm_protocol_api.c#L3265
 SLURM_SUFFIXES = {"K": 1024, "M": 1024**2, "G": 1024**3, "T": 1024**4}
 
 
@@ -151,8 +154,8 @@ class SlurmJob(Job):
         self._job_regex = job_regex
         self.stdout_submit: Path = self.execution_folder / "stdout.submit"
 
-    @classmethod
-    def cluster_properties(cls) -> List[str]:
+    @staticmethod
+    def cluster_properties() -> List[str]:
         return ["State", "Timelimit", "Elapsed", "CPUTime", "ReqCPUs",
                 "ReqMem", "MaxRSS", "MaxVMSize", "MaxDiskRead", "MaxDiskWrite"]
 
@@ -189,13 +192,13 @@ class SlurmJob(Job):
         json_dict.update(super().to_json())
         return json_dict
 
-    @classmethod
-    def tsv_header(cls):
-        return ("\t".join(["Name", *cls.cluster_properties(), "Path"])
+    @staticmethod
+    def tsv_header():
+        return ("\t".join(["Name", *SlurmJob.cluster_properties(), "Path"])
                 + os.linesep)
 
     def tsv_row(self):
-        return ("\t".join([self.name,*self.get_cluster_accounting().values(),
+        return ("\t".join([self.name, *self.get_cluster_accounting().values(),
                            str(self.path)]) + os.linesep)
 
 
