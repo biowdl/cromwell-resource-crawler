@@ -194,12 +194,22 @@ class SlurmJob(Job):
 
     @staticmethod
     def tsv_header():
-        return ("\t".join(["Name", *SlurmJob.cluster_properties(), "Path"])
-                + os.linesep)
+        return ("\t".join(
+            ["Name",
+             *SlurmJob.cluster_properties(),
+             "Inputs",
+             "Outputs",
+             "Path"]
+        ) + os.linesep)
 
     def tsv_row(self):
-        return ("\t".join([self.name, *self.get_cluster_accounting().values(),
-                           str(self.path)]) + os.linesep)
+        return ("\t".join(
+            [self.name,
+             *self.get_cluster_accounting().values(),
+             json.dumps(self.get_input_filesizes()),
+             json.dumps(self.get_output_filesizes()),
+             str(self.path)]
+        ) + os.linesep)
 
 
 def crawl_folder(folder: Path, jobclass: Type[Job] = LocalJob
