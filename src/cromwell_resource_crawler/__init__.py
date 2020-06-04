@@ -131,12 +131,12 @@ DEFAULT_SLURM_JOB_REGEX = re.compile(r"Submitted batch job (\d+).*")
 SLURM_SUFFIXES = {"K": 1024, "M": 1024**2, "G": 1024**3, "T": 1024**4}
 
 
-def slurm_number(value: str) -> int:
+def slurm_number(value: str) -> float:
     for suffix, multiplier in SLURM_SUFFIXES.items():
         if value.endswith(suffix):
 
-            return int(value.rstrip(suffix)) * multiplier
-    return int(value)
+            return float(value.rstrip(suffix)) * multiplier
+    return float(value)
 
 
 def slurm_time(value: str) -> int:
