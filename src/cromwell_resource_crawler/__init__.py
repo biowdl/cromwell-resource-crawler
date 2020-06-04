@@ -26,7 +26,7 @@ import subprocess
 import sys
 from abc import abstractmethod
 from pathlib import Path
-from typing import Any, Dict, Generator, Iterable, List, Optional, Union
+from typing import Any, Dict, Generator, Iterable, List, Optional, Type, Union
 
 from humanize.filesize import naturalsize
 
@@ -195,7 +195,7 @@ class SlurmJob(Job):
                           *self.get_cluster_accounting().values())) + os.linesep  # noqa: E501
 
 
-def crawl_folder(folder: Path, jobclass: Job = LocalJob
+def crawl_folder(folder: Path, jobclass: Type[Job] = LocalJob
                  ) -> Generator[Job, None, None]:
     if not folder.is_dir():
         raise ValueError(f"{folder} is not a directory!")
@@ -211,14 +211,14 @@ def crawl_folder(folder: Path, jobclass: Job = LocalJob
         yield from crawl_workflow_folder(folder, jobclass)
 
 
-def crawl_workflow_folder(workflow_folder: Path, jobclass: Job = LocalJob
+def crawl_workflow_folder(workflow_folder: Path, jobclass: Type[Job] = LocalJob
                           ) -> Generator[Job, None, None]:
     for uuid in workflow_folder.iterdir():
         for call_folder in uuid.iterdir():
             yield from crawl_call_folder(call_folder, jobclass)
 
 
-def crawl_call_folder(call_folder: Path, jobclass: Job = LocalJob
+def crawl_call_folder(call_folder: Path, jobclass: Type[Job] = LocalJob
                       ) -> Generator[Job, None, None]:
     if Path(call_folder, "execution").exists():
         yield jobclass(call_folder)
@@ -234,7 +234,7 @@ def crawl_call_folder(call_folder: Path, jobclass: Job = LocalJob
 
 def jobs_to_json_dict(jobs: Iterable[Job],
                       start_path: Optional[Path] = None) -> Dict:
-    json_dict = {}
+    json_dict: Dict[str, Any] = {}
     for job in jobs:
         job_path = (job.path if start_path is None
                     else job.path.relative_to(start_path))
