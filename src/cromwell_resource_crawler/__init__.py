@@ -196,6 +196,7 @@ class SlurmJob(Job):
     def tsv_header():
         return ("\t".join(
             ["Name",
+             "ExitCode",
              *SlurmJob.cluster_properties(),
              "Inputs",
              "Outputs",
@@ -205,6 +206,7 @@ class SlurmJob(Job):
     def tsv_row(self):
         return ("\t".join(
             [self.name,
+             str(self.get_exit_code()),
              *self.get_cluster_accounting().values(),
              json.dumps(self.get_input_filesizes()),
              json.dumps(self.get_output_filesizes()),
