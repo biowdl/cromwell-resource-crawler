@@ -153,8 +153,8 @@ class SlurmJob(Job):
 
     @classmethod
     def cluster_properties(cls) -> List[str]:
-        return ["ReqCPUs", "Timelimit", "Elapsed", "CPUTime", "ReqMem",
-                "MaxRSS", "MaxVMSize", "MaxDiskRead", "MaxDiskWrite"]
+        return ["State", "Timelimit", "Elapsed", "CPUTime", "ReqCPUs",
+                "ReqMem", "MaxRSS", "MaxVMSize", "MaxDiskRead", "MaxDiskWrite"]
 
     def job_id(self) -> str:
         match = self._job_regex.match(self.stdout_submit.read_text())
@@ -179,6 +179,8 @@ class SlurmJob(Job):
         total_dict = dict(zip(headers, total_usage))
         batch_dict = dict(zip(headers, batch_usage))
         batch_dict["Timelimit"] = total_dict["Timelimit"]
+        for key in ["MaxRSS", "MaxVMSize", "MaxDiskRead", "MaxDiskWrite"]:
+            batch_dict[key] = naturalsize(slurm_number(batch_dict[key]))
         return batch_dict
 
     def to_json(self) -> Dict[str, Any]:
