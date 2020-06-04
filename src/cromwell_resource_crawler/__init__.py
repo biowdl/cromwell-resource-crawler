@@ -212,13 +212,13 @@ class SlurmJob(Job):
         ) + os.linesep)
 
 
-def is_uuid_folder(folder: Path):
+def is_uuid_folder(folder: Path) -> bool:
     if not folder.is_dir():
         return False
     parts = folder.name.split("-")
     if not len(parts) == 5:
         return False
-    if not [len(part) for part in parts ] == [8, 4, 4, 4, 12]:
+    if not [len(part) for part in parts] == [8, 4, 4, 4, 12]:
         return False
     # Each part is a hexadecimal number
     for part in parts:
@@ -253,7 +253,7 @@ def crawl_workflow_folder(workflow_folder: Path, jobclass: Type[Job] = LocalJob
         yield from crawl_uuid_folder(uuid_folder, jobclass=jobclass)
 
 
-def crawl_uuid_folder(uuid_folder: Path, jobclass: Type[Job]- LocalJob
+def crawl_uuid_folder(uuid_folder: Path, jobclass: Type[Job] = LocalJob
                       ) -> Generator[Job, None, None]:
     for call_folder in uuid_folder.iterdir():
         yield from crawl_call_folder(call_folder, jobclass)
