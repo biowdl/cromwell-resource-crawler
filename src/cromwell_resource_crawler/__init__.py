@@ -163,7 +163,7 @@ class SlurmJob(Job):
         return match.group(1)
 
     def _cluster_account_command(self) -> str:
-        args = ("sacct", "-j", self.job_id(), "-l", "--parsable2",
+        args = ("sacct", "-j", self.job_id(), "--parsable2",
                 "--format", ",".join(self.cluster_properties()))
         result = subprocess.run(args, stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE, check=True)
