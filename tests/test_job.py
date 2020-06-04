@@ -41,14 +41,14 @@ def test_exit_code_correct(localjob):
 
 def test_input_filesizes(localjob):
     assert localjob.get_input_filesizes() == {
-        "1599980398/dockerImages.yml": 1988
+        "1599980398/dockerImages.yml": "1.9 KiB"
     }
 
 
 def test_output_filesize(localjob):
     assert localjob.get_output_filesizes() == {
-        "dockerImages.json": 1295,
-        "nested_outputs/dummy_output": 34
+        "dockerImages.json": "1.3 KiB",
+        "nested_outputs/dummy_output": "34 Bytes"
     }
 
 
