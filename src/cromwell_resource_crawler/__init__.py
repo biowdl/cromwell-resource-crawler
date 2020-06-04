@@ -188,11 +188,13 @@ class SlurmJob(Job):
 
     @classmethod
     def tsv_header(cls):
-        return "\t".join(("Path", "Name", *cls.cluster_properties)) + os.linesep  # noqa: E501
+        return ("\t".join(("Path", "Name", *cls.cluster_properties()))
+                + os.linesep)
 
     def tsv_row(self):
-        return "\t".join((str(self.path), self.name,
-                          *self.get_cluster_accounting().values())) + os.linesep  # noqa: E501
+        return ("\t".join((str(self.path), self.name,
+                           *self.get_cluster_accounting().values()))
+                + os.linesep)
 
 
 def crawl_folder(folder: Path, jobclass: Type[Job] = LocalJob
