@@ -236,11 +236,11 @@ def crawl_folder(folder: Path, jobclass: Type[Job] = LocalJob
     if not folder.is_dir():
         raise ValueError(f"{folder} is not a directory!")
     if folder.name == "cromwell-executions":
-        for path in os.scandir(folder):  # type: os.DirEntry
+        for path in folder.iterdir():
             if not path.is_dir():
                 continue
             if "-" not in path.name:
-                yield from crawl_workflow_folder(Path(path.name), jobclass)
+                yield from crawl_workflow_folder(path, jobclass)
     elif folder.name.startswith("call-"):
         yield from crawl_call_folder(folder, jobclass)
     elif is_uuid_folder(folder):
