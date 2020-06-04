@@ -1,0 +1,37 @@
+#!/bin/bash
+
+cd /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-calculateRegions/CalculateRegions/8b79bccf-6989-4068-8cb5-a811f0aff13f/call-mergeBeds/execution
+tmpDir=$(mkdir -p "/cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-calculateRegions/CalculateRegions/8b79bccf-6989-4068-8cb5-a811f0aff13f/call-mergeBeds/tmp.d4af524b" && echo "/cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-calculateRegions/CalculateRegions/8b79bccf-6989-4068-8cb5-a811f0aff13f/call-mergeBeds/tmp.d4af524b")
+chmod 777 "$tmpDir"
+export _JAVA_OPTIONS=-Djava.io.tmpdir="$tmpDir"
+export TMPDIR="$tmpDir"
+export HOME="$HOME"
+(
+cd /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-calculateRegions/CalculateRegions/8b79bccf-6989-4068-8cb5-a811f0aff13f/call-mergeBeds/execution
+
+)
+out8b79bccf="${tmpDir}/out.$$" err8b79bccf="${tmpDir}/err.$$"
+mkfifo "$out8b79bccf" "$err8b79bccf"
+trap 'rm "$out8b79bccf" "$err8b79bccf"' EXIT
+tee '/cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-calculateRegions/CalculateRegions/8b79bccf-6989-4068-8cb5-a811f0aff13f/call-mergeBeds/execution/stdout' < "$out8b79bccf" &
+tee '/cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-calculateRegions/CalculateRegions/8b79bccf-6989-4068-8cb5-a811f0aff13f/call-mergeBeds/execution/stderr' < "$err8b79bccf" >&2 &
+(
+cd /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-calculateRegions/CalculateRegions/8b79bccf-6989-4068-8cb5-a811f0aff13f/call-mergeBeds/execution
+
+
+set -e -o pipefail
+cat /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-calculateRegions/CalculateRegions/8b79bccf-6989-4068-8cb5-a811f0aff13f/call-mergeBeds/inputs/1489649706/x_non_par.bed /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-calculateRegions/CalculateRegions/8b79bccf-6989-4068-8cb5-a811f0aff13f/call-mergeBeds/inputs/1489649706/y_non_par.bed | bedtools sort | bedtools merge > merged.bed
+)  > "$out8b79bccf" 2> "$err8b79bccf"
+echo $? > /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-calculateRegions/CalculateRegions/8b79bccf-6989-4068-8cb5-a811f0aff13f/call-mergeBeds/execution/rc.tmp
+(
+# add a .file in every empty directory to facilitate directory delocalization on the cloud
+cd /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-calculateRegions/CalculateRegions/8b79bccf-6989-4068-8cb5-a811f0aff13f/call-mergeBeds/execution
+find . -type d -exec sh -c '[ -z "$(ls -A '"'"'{}'"'"')" ] && touch '"'"'{}'"'"'/.file' \;
+)
+(
+cd /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-calculateRegions/CalculateRegions/8b79bccf-6989-4068-8cb5-a811f0aff13f/call-mergeBeds/execution
+sync
+
+
+)
+mv /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-calculateRegions/CalculateRegions/8b79bccf-6989-4068-8cb5-a811f0aff13f/call-mergeBeds/execution/rc.tmp /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-calculateRegions/CalculateRegions/8b79bccf-6989-4068-8cb5-a811f0aff13f/call-mergeBeds/execution/rc

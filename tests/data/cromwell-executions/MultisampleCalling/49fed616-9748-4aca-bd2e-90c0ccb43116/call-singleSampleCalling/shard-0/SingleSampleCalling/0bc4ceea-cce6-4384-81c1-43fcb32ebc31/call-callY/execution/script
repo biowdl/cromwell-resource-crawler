@@ -1,0 +1,51 @@
+#!/bin/bash
+
+cd /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-singleSampleCalling/shard-0/SingleSampleCalling/0bc4ceea-cce6-4384-81c1-43fcb32ebc31/call-callY/execution
+tmpDir=$(mkdir -p "/cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-singleSampleCalling/shard-0/SingleSampleCalling/0bc4ceea-cce6-4384-81c1-43fcb32ebc31/call-callY/tmp.f5bd0418" && echo "/cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-singleSampleCalling/shard-0/SingleSampleCalling/0bc4ceea-cce6-4384-81c1-43fcb32ebc31/call-callY/tmp.f5bd0418")
+chmod 777 "$tmpDir"
+export _JAVA_OPTIONS=-Djava.io.tmpdir="$tmpDir"
+export TMPDIR="$tmpDir"
+export HOME="$HOME"
+(
+cd /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-singleSampleCalling/shard-0/SingleSampleCalling/0bc4ceea-cce6-4384-81c1-43fcb32ebc31/call-callY/execution
+
+)
+out0bc4ceea="${tmpDir}/out.$$" err0bc4ceea="${tmpDir}/err.$$"
+mkfifo "$out0bc4ceea" "$err0bc4ceea"
+trap 'rm "$out0bc4ceea" "$err0bc4ceea"' EXIT
+tee '/cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-singleSampleCalling/shard-0/SingleSampleCalling/0bc4ceea-cce6-4384-81c1-43fcb32ebc31/call-callY/execution/stdout' < "$out0bc4ceea" &
+tee '/cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-singleSampleCalling/shard-0/SingleSampleCalling/0bc4ceea-cce6-4384-81c1-43fcb32ebc31/call-callY/execution/stderr' < "$err0bc4ceea" >&2 &
+(
+cd /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-singleSampleCalling/shard-0/SingleSampleCalling/0bc4ceea-cce6-4384-81c1-43fcb32ebc31/call-callY/execution
+
+
+set -e
+mkdir -p "$(dirname ./samples//male/scatters//Y.g.vcf.gz)"
+gatk --java-options -Xmx4G \
+HaplotypeCaller \
+-R /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-singleSampleCalling/shard-0/SingleSampleCalling/0bc4ceea-cce6-4384-81c1-43fcb32ebc31/call-callY/inputs/1489649706/reference.fasta \
+-O ./samples//male/scatters//Y.g.vcf.gz \
+-I /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-singleSampleCalling/shard-0/SingleSampleCalling/0bc4ceea-cce6-4384-81c1-43fcb32ebc31/call-callY/inputs/1489649706/male.bam \
+--sample-ploidy 1 \
+-L /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-singleSampleCalling/shard-0/SingleSampleCalling/0bc4ceea-cce6-4384-81c1-43fcb32ebc31/call-callY/inputs/1489649706/y_non_par.bed \
+  \
+-D /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-singleSampleCalling/shard-0/SingleSampleCalling/0bc4ceea-cce6-4384-81c1-43fcb32ebc31/call-callY/inputs/1489649706/expected.vcf.gz \
+ \
+ \
+ \
+--emit-ref-confidence GVCF \
+ \
+)  > "$out0bc4ceea" 2> "$err0bc4ceea"
+echo $? > /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-singleSampleCalling/shard-0/SingleSampleCalling/0bc4ceea-cce6-4384-81c1-43fcb32ebc31/call-callY/execution/rc.tmp
+(
+# add a .file in every empty directory to facilitate directory delocalization on the cloud
+cd /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-singleSampleCalling/shard-0/SingleSampleCalling/0bc4ceea-cce6-4384-81c1-43fcb32ebc31/call-callY/execution
+find . -type d -exec sh -c '[ -z "$(ls -A '"'"'{}'"'"')" ] && touch '"'"'{}'"'"'/.file' \;
+)
+(
+cd /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-singleSampleCalling/shard-0/SingleSampleCalling/0bc4ceea-cce6-4384-81c1-43fcb32ebc31/call-callY/execution
+sync
+
+
+)
+mv /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-singleSampleCalling/shard-0/SingleSampleCalling/0bc4ceea-cce6-4384-81c1-43fcb32ebc31/call-callY/execution/rc.tmp /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-singleSampleCalling/shard-0/SingleSampleCalling/0bc4ceea-cce6-4384-81c1-43fcb32ebc31/call-callY/execution/rc

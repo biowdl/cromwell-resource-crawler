@@ -1,0 +1,20 @@
+#!/bin/bash
+# make sure there is no preexisting Docker CID file
+rm -f /tmp/pytest_workflow_qgzpzxzj/two_sample_gender_aware/cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-JointGenotyping/JointGenotyping/f24f616d-845b-40d0-8bd1-5441dcd033e7/call-genotypeGvcfs/shard-1/execution/docker_cid
+# run as in the original configuration without --rm flag (will remove later)
+docker run \
+  --cidfile /tmp/pytest_workflow_qgzpzxzj/two_sample_gender_aware/cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-JointGenotyping/JointGenotyping/f24f616d-845b-40d0-8bd1-5441dcd033e7/call-genotypeGvcfs/shard-1/execution/docker_cid \
+  -i \
+  --user $EUID \
+  --entrypoint /bin/bash \
+  -v /tmp/pytest_workflow_qgzpzxzj/two_sample_gender_aware/cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-JointGenotyping/JointGenotyping/f24f616d-845b-40d0-8bd1-5441dcd033e7/call-genotypeGvcfs/shard-1:/cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-JointGenotyping/JointGenotyping/f24f616d-845b-40d0-8bd1-5441dcd033e7/call-genotypeGvcfs/shard-1:delegated \
+  quay.io/biocontainers/gatk4@sha256:5309488edb01e0835fdfacf127e6e9c0a52f6ea7fe0d90fafbe1316347189f72 /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-JointGenotyping/JointGenotyping/f24f616d-845b-40d0-8bd1-5441dcd033e7/call-genotypeGvcfs/shard-1/execution/script
+
+# get the return code (working even if the container was detached)
+rc=$(docker wait `cat /tmp/pytest_workflow_qgzpzxzj/two_sample_gender_aware/cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-JointGenotyping/JointGenotyping/f24f616d-845b-40d0-8bd1-5441dcd033e7/call-genotypeGvcfs/shard-1/execution/docker_cid`)
+
+# remove the container after waiting
+docker rm `cat /tmp/pytest_workflow_qgzpzxzj/two_sample_gender_aware/cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-JointGenotyping/JointGenotyping/f24f616d-845b-40d0-8bd1-5441dcd033e7/call-genotypeGvcfs/shard-1/execution/docker_cid`
+
+# return exit code
+exit $rc

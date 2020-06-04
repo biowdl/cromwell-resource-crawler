@@ -1,0 +1,58 @@
+#!/bin/bash
+
+cd /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-JointGenotyping/JointGenotyping/f24f616d-845b-40d0-8bd1-5441dcd033e7/call-scatterRegions/execution
+tmpDir=$(mkdir -p "/cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-JointGenotyping/JointGenotyping/f24f616d-845b-40d0-8bd1-5441dcd033e7/call-scatterRegions/tmp.bfdc8c52" && echo "/cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-JointGenotyping/JointGenotyping/f24f616d-845b-40d0-8bd1-5441dcd033e7/call-scatterRegions/tmp.bfdc8c52")
+chmod 777 "$tmpDir"
+export _JAVA_OPTIONS=-Djava.io.tmpdir="$tmpDir"
+export TMPDIR="$tmpDir"
+export HOME="$HOME"
+(
+cd /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-JointGenotyping/JointGenotyping/f24f616d-845b-40d0-8bd1-5441dcd033e7/call-scatterRegions/execution
+
+)
+outf24f616d="${tmpDir}/out.$$" errf24f616d="${tmpDir}/err.$$"
+mkfifo "$outf24f616d" "$errf24f616d"
+trap 'rm "$outf24f616d" "$errf24f616d"' EXIT
+tee '/cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-JointGenotyping/JointGenotyping/f24f616d-845b-40d0-8bd1-5441dcd033e7/call-scatterRegions/execution/stdout' < "$outf24f616d" &
+tee '/cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-JointGenotyping/JointGenotyping/f24f616d-845b-40d0-8bd1-5441dcd033e7/call-scatterRegions/execution/stderr' < "$errf24f616d" >&2 &
+(
+cd /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-JointGenotyping/JointGenotyping/f24f616d-845b-40d0-8bd1-5441dcd033e7/call-scatterRegions/execution
+
+
+set -e -o pipefail
+mkdir -p scatters
+biopet-scatterregions -Xmx8G \
+  -R /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-JointGenotyping/JointGenotyping/f24f616d-845b-40d0-8bd1-5441dcd033e7/call-scatterRegions/inputs/1489649706/reference.fasta \
+  -o scatters \
+  -s 10000 \
+   \
+   \
+  
+
+# Glob messes with order of scatters (10 comes before 1), which causes
+# problems at gatherGvcfs
+# Therefore we reorder the scatters with python.
+python << CODE
+import os
+scatters = os.listdir("scatters")
+splitext = [ x.split(".") for x in scatters]
+splitnum = [x.split("-") + [y] for x,y in splitext]
+ordered = sorted(splitnum, key=lambda x: int(x[1]))
+merged = ["scatters/{}-{}.{}".format(x[0],x[1],x[2]) for x in ordered]
+for x in merged:
+  print(x)
+CODE
+)  > "$outf24f616d" 2> "$errf24f616d"
+echo $? > /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-JointGenotyping/JointGenotyping/f24f616d-845b-40d0-8bd1-5441dcd033e7/call-scatterRegions/execution/rc.tmp
+(
+# add a .file in every empty directory to facilitate directory delocalization on the cloud
+cd /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-JointGenotyping/JointGenotyping/f24f616d-845b-40d0-8bd1-5441dcd033e7/call-scatterRegions/execution
+find . -type d -exec sh -c '[ -z "$(ls -A '"'"'{}'"'"')" ] && touch '"'"'{}'"'"'/.file' \;
+)
+(
+cd /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-JointGenotyping/JointGenotyping/f24f616d-845b-40d0-8bd1-5441dcd033e7/call-scatterRegions/execution
+sync
+
+
+)
+mv /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-JointGenotyping/JointGenotyping/f24f616d-845b-40d0-8bd1-5441dcd033e7/call-scatterRegions/execution/rc.tmp /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-JointGenotyping/JointGenotyping/f24f616d-845b-40d0-8bd1-5441dcd033e7/call-scatterRegions/execution/rc

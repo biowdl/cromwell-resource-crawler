@@ -1,0 +1,3 @@
+Picked up _JAVA_OPTIONS: -Djava.io.tmpdir=/cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-JointGenotyping/JointGenotyping/f24f616d-845b-40d0-8bd1-5441dcd033e7/call-scatterRegions/tmp.bfdc8c52
+INFO  [2020-06-04 13:02:55,048] [ScatterRegions$] - Start
+INFO  [2020-06-04 13:02:55,204] [ScatterRegions$] - Done
