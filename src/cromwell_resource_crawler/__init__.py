@@ -247,7 +247,7 @@ def crawl_folder(folder: Path, jobclass: Type[Job] = LocalJob
         yield from crawl_call_folder(folder, jobclass)
     elif folder.name.startswith("shard-"):  # for shards with workflows
         for path in folder.iterdir():
-            yield from crawl_folder(path)
+            yield from crawl_workflow_folder(path)
     elif is_uuid_folder(folder):
         yield from crawl_uuid_folder(folder, jobclass)
     else:
