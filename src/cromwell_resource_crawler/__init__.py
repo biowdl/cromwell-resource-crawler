@@ -316,11 +316,16 @@ def argument_parser() -> argparse.ArgumentParser:
                         help="Workflow directory. Such as "
                              "cromwell-executions/WORKFLOW_DIR.")
     parser.add_argument("-b", "--backend", type=str, choices=JOBS_DICT.keys(),
-                        default="local")
+                        default="local",
+                        help="Which backend the jobs have been running on. "
+                             "This determines how the resource usages are "
+                             "acquired.")
     parser.add_argument("-f", "--output-format", type=str,
                         choices=["json", "tsv"], default="json")
     parser.add_argument("-o", "--output", default=DEFAULT_OUTPUT,
-                        required=not bool(DEFAULT_OUTPUT))
+                        required=not bool(DEFAULT_OUTPUT),
+                        help=f"Output file to use. Default: "
+                             f"{str(DEFAULT_OUTPUT)}.")
     parser.add_argument("-n", "--name", required=False,
                         help="Select only jobs named 'call-NAME'.")
     parser.add_argument("-p", "--filter", metavar="STRING",
