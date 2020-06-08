@@ -19,6 +19,7 @@
 # SOFTWARE.
 
 from pathlib import Path
+
 from cromwell_resource_crawler import crawl_folder
 
 import pytest

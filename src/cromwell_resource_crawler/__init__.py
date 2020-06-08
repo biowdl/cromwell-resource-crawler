@@ -60,21 +60,26 @@ class Job(abc.ABC):
         self.inputs_folder: Path = path / "inputs"
         self.name = self._get_name()
 
-    @abstractmethod
     def to_json(self) -> Dict[str, Any]:
-        return {
-            "inputs": self.get_input_filesizes(),
-            "outputs": self.get_output_filesizes()
-        }
-
-    @staticmethod
-    @abstractmethod
-    def tsv_header() -> str:
-        pass
+        return dict(zip(self.properties(), self.values()))
 
     @abstractmethod
+    def properties(self) -> List[str]:
+        return ["Name", "ExitCode", "Inputs", "Outputs", "Path"]
+
+    @abstractmethod
+    def values(self) -> List[str]:
+        return [self.name,
+                str(self.get_exit_code()),
+                json.dumps(self.get_input_filesizes()),
+                json.dumps(self.get_output_filesizes()),
+                str(self.path)]
+
+    def tsv_header(self) -> str:
+        return "\t".join(self.properties()) + os.linesep
+
     def tsv_row(self) -> str:
-        pass
+        return "\t".join(self.values()) + os.linesep
 
     def outputs(self) -> Generator[Path, None, None]:
         for path, dirs, files in os.walk(self.execution_folder):
@@ -112,22 +117,14 @@ class Job(abc.ABC):
 
 
 class LocalJob(Job):
+    def properties(self) -> List[str]:
+        return super().properties()
 
-    def to_json(self) -> Dict[str, Any]:
-        return super().to_json()
-
-    @staticmethod
-    def tsv_header() -> str:
-        raise NotImplementedError("TSV representation not implemented for "
-                                  "local jobs.")
-
-    def tsv_row(self) -> str:
-        raise NotImplementedError("TSV representation not implemented for "
-                                  "local jobs.")
+    def values(self) -> List[str]:
+        return super().values()
 
 
 DEFAULT_SLURM_JOB_REGEX = re.compile(r"Submitted batch job (\d+).*")
-
 
 # SLURM uses a base of 1024
 # https://github.com/SchedMD/slurm/blob/753db1d52c9bb91f970d83aa9418a6faddf93461/src/common/slurm_protocol_api.c#L3265
@@ -154,10 +151,20 @@ class SlurmJob(Job):
         self._job_regex = job_regex
         self.stdout_submit: Path = self.execution_folder / "stdout.submit"
 
-    @staticmethod
-    def cluster_properties() -> List[str]:
+    def cluster_properties(self) -> List[str]:
         return ["State", "Timelimit", "Elapsed", "CPUTime", "ReqCPUs",
                 "ReqMem", "MaxRSS", "MaxVMSize", "MaxDiskRead", "MaxDiskWrite"]
+
+    def properties(self) -> List[str]:
+        super_props = super().properties()
+        # Insert cluster properties after name and exit code.
+        return super_props[:2] + self.cluster_properties() + super_props[2:]
+
+    def values(self) -> List[str]:
+        super_values = super().values()
+        return (super_values[:2] +
+                list(self.get_cluster_accounting().values()) +
+                super_values[2:])
 
     def job_id(self) -> str:
         match = self._job_regex.match(self.stdout_submit.read_text())
@@ -186,32 +193,6 @@ class SlurmJob(Job):
             batch_dict[key] = naturalsize(slurm_number(batch_dict[key]),
                                           binary=True)
         return batch_dict
-
-    def to_json(self) -> Dict[str, Any]:
-        json_dict = self.get_cluster_accounting()
-        json_dict.update(super().to_json())
-        return json_dict
-
-    @staticmethod
-    def tsv_header():
-        return ("\t".join(
-            ["Name",
-             "ExitCode",
-             *SlurmJob.cluster_properties(),
-             "Inputs",
-             "Outputs",
-             "Path"]
-        ) + os.linesep)
-
-    def tsv_row(self):
-        return ("\t".join(
-            [self.name,
-             str(self.get_exit_code()),
-             *self.get_cluster_accounting().values(),
-             json.dumps(self.get_input_filesizes()),
-             json.dumps(self.get_output_filesizes()),
-             str(self.path)]
-        ) + os.linesep)
 
 
 def is_uuid_folder(folder: Path) -> bool:
@@ -321,7 +302,7 @@ def argument_parser() -> argparse.ArgumentParser:
                              "This determines how the resource usages are "
                              "acquired.")
     parser.add_argument("-f", "--output-format", type=str,
-                        choices=["json", "tsv"], default="json")
+                        choices=["json", "tsv"], default="tsv")
     parser.add_argument("-o", "--output", default=DEFAULT_OUTPUT,
                         required=not bool(DEFAULT_OUTPUT),
                         help=f"Output file to use. Default: "
