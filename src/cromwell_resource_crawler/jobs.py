@@ -118,6 +118,8 @@ class Job(abc.ABC):
         sizes: Dict[str, str] = {}
         for path in files:
             key = str(path.relative_to(relative_to))
+            # File existence needs to be checked. Sometimes broken symbolic
+            # links can be present.
             if path.exists():
                 size = path.stat().st_size
             else:
