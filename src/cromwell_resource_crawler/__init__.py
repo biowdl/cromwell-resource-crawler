@@ -82,12 +82,12 @@ class Job(abc.ABC):
         return "\t".join(self.values()) + os.linesep
 
     def outputs(self) -> Generator[Path, None, None]:
-        for path, dirs, files in os.walk(self.execution_folder):
+        for path, folders, files in os.walk(self.execution_folder):
             for file in files:
                 if file not in CROMWELL_EXECUTION_FOLDER_RESERVED_FILES:
                     yield Path(path, file)
-            for dir in dirs:
-                yield from get_files_from_dir_recursively(Path(path, dir))
+            for folder in folders:
+                yield from get_files_from_dir_recursively(Path(path, folder))
 
     def inputs(self) -> Generator[Path, None, None]:
         return get_files_from_dir_recursively(self.inputs_folder)
