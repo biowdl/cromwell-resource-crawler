@@ -25,22 +25,24 @@ import re
 import subprocess
 from abc import abstractmethod
 from pathlib import Path
-from typing import Any, Dict, Generator, Iterable, List, Union
+from typing import Any, Dict, Generator, Iterable, List, Set, Union
 
 from humanize.filesize import naturalsize
 
-CROMWELL_EXECUTION_FOLDER_RESERVED_FILES = {
-    "stdout",
-    "stderr",
-    "stdout.submit",
-    "stderr.submit",
-    "script",
-    "script.submit",
-    "script.check",
-    "stdout.check",
-    "stderr.check",
-    "rc"
-}
+
+def cromwell_execution_folder_reserved_files() -> Set[str]:
+    reserved_files: Set[str] = set()
+    prefixes = ["stdout", "script", "stderr"]
+    suffixes = ["", ".submit", ".check", ".background"]
+    for prefix in prefixes:
+        for suffix in suffixes:
+            reserved_files.add(prefix + suffix)
+    reserved_files.add("rc")
+    return reserved_files
+
+
+CROMWELL_EXECUTION_FOLDER_RESERVED_FILES = \
+    cromwell_execution_folder_reserved_files()
 
 
 def get_files_from_dir_recursively(path: Union[os.PathLike, str]
