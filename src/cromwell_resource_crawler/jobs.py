@@ -145,7 +145,8 @@ DEFAULT_SLURM_JOB_REGEX = re.compile(r"Submitted batch job (\d+).*")
 
 # SLURM uses a base of 1024
 # https://github.com/SchedMD/slurm/blob/753db1d52c9bb91f970d83aa9418a6faddf93461/src/common/slurm_protocol_api.c#L3265
-SLURM_SUFFIXES = {"K": 1024, "M": 1024**2, "G": 1024**3, "T": 1024**4}
+SLURM_SUFFIXES = {"K": 1024, "M": 1024**2, "G": 1024**3, "T": 1024**4,
+                  "Kn": 1024, "Mn": 1024**2, "Gn": 1024**3, "Tn": 1024**4}
 
 
 def slurm_number(value: str) -> int:
@@ -178,7 +179,7 @@ class SlurmJob(Job):
 
     @staticmethod
     def cluster_properties() -> List[str]:
-        return ["State", "Timelimit", "Elapsed", "CPUTime", "ReqCPUs",
+        return ["State", "Timelimit", "Elapsed", "CPUTime", "ReqCPUS",
                 "ReqMem", "MaxRSS", "MaxVMSize", "MaxDiskRead", "MaxDiskWrite"]
 
     def property_order(self) -> List[str]:
