@@ -118,7 +118,10 @@ class Job(abc.ABC):
         sizes: Dict[str, str] = {}
         for path in files:
             key = str(path.relative_to(relative_to))
-            size = path.stat().st_size
+            if path.exists():
+                size = path.stat().st_size
+            else:
+                size = 0
             if human_readable:
                 sizes[key] = naturalsize(size, binary=True)
             else:
