@@ -98,7 +98,8 @@ def crawl_call_folder(call_folder: Path, jobclass: Type[Job] = LocalJob
 
 
 def jobs_to_json_dict(jobs: Iterable[Job],
-                      start_path: Optional[Path] = None) -> Dict:
+                      start_path: Optional[Path] = None,
+                      human_readable: bool = True) -> Dict:
     json_dict: Dict[str, Any] = {}
     for job in jobs:
         job_path = (job.path if start_path is None
@@ -108,17 +109,21 @@ def jobs_to_json_dict(jobs: Iterable[Job],
             if part not in part_dict:
                 part_dict[part] = {}
             part_dict = part_dict[part]
-        part_dict[job_path.parts[-1]] = job.to_json()
+        part_dict[job_path.parts[-1]] = job.to_json(human_readable)
     return json_dict
 
 
-def jobs_to_tsv(jobs: Iterable[Job]) -> Generator[str, None, None]:
+def jobs_to_tsv(jobs: Iterable[Job], human_readable: bool = True
+                ) -> Generator[str, None, None]:
     job_iter = iter(jobs)
-    first_job = next(job_iter)
+    try:
+        first_job = next(job_iter)
+    except StopIteration:
+        return
     yield first_job.tsv_header()
-    yield first_job.tsv_row()
+    yield first_job.tsv_row(human_readable)
     for job in job_iter:
-        yield job.tsv_row()
+        yield job.tsv_row(human_readable)
 
 
 JOBS_DICT = dict(slurm=SlurmJob, local=LocalJob)
@@ -142,9 +147,12 @@ def argument_parser() -> argparse.ArgumentParser:
                              f"{str(DEFAULT_OUTPUT)}.")
     parser.add_argument("-n", "--name", required=False,
                         help="Select only jobs named 'call-NAME'.")
-    parser.add_argument("-p", "--filter", metavar="STRING",
+    parser.add_argument("-F", "--filter", metavar="STRING",
                         help="Select only jobs where STRING is part of the "
                              "path.")
+    parser.add_argument("-r", "--raw", action="store_true",
+                        help="Output in bytes and seconds instead of human "
+                             "readable numbers.")
     return parser
 
 
@@ -158,9 +166,10 @@ def main():
         jobs = (job for job in jobs if args.filter in str(job.path))
     with open(args.output, "wt") as output_h:
         if args.output_format == "json":
-            json.dump(jobs_to_json_dict(jobs, workflow_folder), output_h)
+            json.dump(jobs_to_json_dict(jobs, workflow_folder, not args.raw
+                                        ), output_h)
         elif args.output_format == "tsv":
-            for line in jobs_to_tsv(jobs):
+            for line in jobs_to_tsv(jobs, not args.raw):
                 output_h.write(line)
 
 

@@ -19,14 +19,13 @@
 # SOFTWARE.
 
 import abc
-import functools
 import json
 import os
 import re
 import subprocess
 from abc import abstractmethod
 from pathlib import Path
-from typing import Any, Dict, Generator, Iterable, List, Union, Callable
+from typing import Any, Dict, Generator, Iterable, List, Union
 
 from humanize.filesize import naturalsize
 
@@ -46,9 +45,9 @@ CROMWELL_EXECUTION_FOLDER_RESERVED_FILES = {
 
 def get_files_from_dir_recursively(path: Union[os.PathLike, str]
                                    ) -> Generator[Path, None, None]:
-    for path, dirs, files in os.walk(path):
+    for base_path, dirs, files in os.walk(path):
         for file in files:
-            yield Path(path, file)
+            yield Path(base_path, file)
 
 
 class Job(abc.ABC):
@@ -111,16 +110,18 @@ class Job(abc.ABC):
         return self._size_calculation(self.outputs(), self.execution_folder,
                                       human_readable)
 
-    def _size_calculation(self, files: Iterable[Path], relative_to: Path,
+    @staticmethod
+    def _size_calculation(files: Iterable[Path], relative_to: Path,
                           human_readable: bool) -> Dict[str, str]:
-        int_to_str: Callable[[int], str] = (
-            functools.partial(naturalsize, binary=True)
-            if human_readable else str)
-        return {
-            str(path.relative_to(relative_to)):
-                int_to_str(path.stat().st_size)
-            for path in files
-        }
+        sizes: Dict[str, str] = {}
+        for path in files:
+            key = str(path.relative_to(relative_to))
+            size = path.stat().st_size
+            if human_readable:
+                sizes[key] = naturalsize(size, binary=True)
+            else:
+                sizes[key] = str(size)
+        return sizes
 
     def get_exit_code(self) -> int:
         return int(Path(self.execution_folder, "rc").read_text())
@@ -136,8 +137,8 @@ class LocalJob(Job):
     def property_order(self) -> List[str]:
         return super().property_order()
 
-    def get_properties(self):
-        return super().get_properties()
+    def get_properties(self, human_readable: bool):
+        return super().get_properties(human_readable)
 
 
 DEFAULT_SLURM_JOB_REGEX = re.compile(r"Submitted batch job (\d+).*")
@@ -147,12 +148,12 @@ DEFAULT_SLURM_JOB_REGEX = re.compile(r"Submitted batch job (\d+).*")
 SLURM_SUFFIXES = {"K": 1024, "M": 1024**2, "G": 1024**3, "T": 1024**4}
 
 
-def slurm_number(value: str) -> float:
+def slurm_number(value: str) -> int:
     for suffix, multiplier in SLURM_SUFFIXES.items():
         if value.endswith(suffix):
 
-            return float(value.rstrip(suffix)) * multiplier
-    return float(value)
+            return round(float(value.rstrip(suffix)) * multiplier)
+    return int(value)
 
 
 def slurm_time(value: str) -> int:
@@ -175,7 +176,8 @@ class SlurmJob(Job):
         self._job_regex = job_regex
         self.stdout_submit: Path = self.execution_folder / "stdout.submit"
 
-    def cluster_properties(self) -> List[str]:
+    @staticmethod
+    def cluster_properties() -> List[str]:
         return ["State", "Timelimit", "Elapsed", "CPUTime", "ReqCPUs",
                 "ReqMem", "MaxRSS", "MaxVMSize", "MaxDiskRead", "MaxDiskWrite"]
 
@@ -184,9 +186,9 @@ class SlurmJob(Job):
         # Insert cluster properties after name and exit code.
         return super_order[:2] + self.cluster_properties() + super_order[2:]
 
-    def get_properties(self):
-        props = super().get_properties()
-        props.update(self.get_cluster_accounting())
+    def get_properties(self, human_readable: bool):
+        props = super().get_properties(human_readable)
+        props.update(self.get_cluster_accounting(human_readable))
         return props
 
     def job_id(self) -> str:
@@ -217,7 +219,7 @@ class SlurmJob(Job):
             if human_readable:
                 batch_dict[key] = naturalsize(bytes_number, binary=True)
             else:
-                batch_dict[key] = bytes_number
+                batch_dict[key] = str(bytes_number)
         if not human_readable:
             for key in ["Timelimit", "Elapsed", "CPUTime"]:
                 batch_dict[key] = str(slurm_time(batch_dict[key]))

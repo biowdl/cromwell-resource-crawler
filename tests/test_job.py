@@ -18,7 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from cromwell_resource_crawler import LocalJob, SlurmJob
+from cromwell_resource_crawler.jobs import LocalJob, SlurmJob
 
 import pytest
 
@@ -39,16 +39,29 @@ def test_exit_code_correct(localjob):
     assert localjob.get_exit_code() == 0
 
 
-def test_input_filesizes(localjob):
-    assert localjob.get_input_filesizes() == {
+def test_input_filesizes_human_readable(localjob):
+    assert localjob.get_input_filesizes(True) == {
         "1599980398/dockerImages.yml": "1.9 KiB"
     }
 
 
-def test_output_filesize(localjob):
-    assert localjob.get_output_filesizes() == {
+def test_input_filesizes_raw(localjob):
+    assert localjob.get_input_filesizes(False) == {
+        "1599980398/dockerImages.yml": "1988"
+    }
+
+
+def test_output_filesize_human_readable(localjob):
+    assert localjob.get_output_filesizes(True) == {
         "dockerImages.json": "1.3 KiB",
         "nested_outputs/dummy_output": "34 Bytes"
+    }
+
+
+def test_output_filesize_raw(localjob):
+    assert localjob.get_output_filesizes(False) == {
+        "dockerImages.json": "1295",
+        "nested_outputs/dummy_output": "34"
     }
 
 
