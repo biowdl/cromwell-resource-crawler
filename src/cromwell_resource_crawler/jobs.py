@@ -52,29 +52,29 @@ def get_files_from_dir_recursively(path: Union[os.PathLike, str]
 
 
 class Job(abc.ABC):
-    def __init__(self, path: Path, human_readable: bool = True):
+    def __init__(self, path: Path):
         self.path: Path = path
         self.execution_folder: Path = path / "execution"
         self.inputs_folder: Path = path / "inputs"
         self.name = self._get_name()
-        self.human_readable = human_readable
 
     @abstractmethod
     def property_order(self) -> List[str]:
         return ["Name", "ExitCode", "Inputs", "Outputs", "Path"]
 
     @abstractmethod
-    def get_properties(self) -> Dict[str, Any]:
+    def get_properties(self, human_readable: bool) -> Dict[str, Any]:
         return {
             "Name": self.name,
             "ExitCode": str(self.get_exit_code()),
-            "Inputs": self.get_input_filesizes(),
-            "Outputs": self.get_output_filesizes(),
+            "Inputs": self.get_input_filesizes(human_readable),
+            "Outputs": self.get_output_filesizes(human_readable),
             "Path": str(self.path)
         }
 
-    def tsv_properties(self) -> Generator[str, None, None]:
-        properties = self.get_properties()
+    def tsv_properties(self, human_readable: bool
+                       ) -> Generator[str, None, None]:
+        properties = self.get_properties(human_readable)
         for key in self.property_order():
             value = properties[key]
             # jsonify containers
@@ -83,14 +83,14 @@ class Job(abc.ABC):
             else:
                 yield value
 
-    def to_json(self) -> Dict[str, Any]:
-        return self.get_properties()
+    def to_json(self, human_readable) -> Dict[str, Any]:
+        return self.get_properties(human_readable)
 
     def tsv_header(self) -> str:
         return "\t".join(self.property_order()) + os.linesep
 
-    def tsv_row(self) -> str:
-        return "\t".join(self.tsv_properties()) + os.linesep
+    def tsv_row(self, human_readable) -> str:
+        return "\t".join(self.tsv_properties(human_readable)) + os.linesep
 
     def outputs(self) -> Generator[Path, None, None]:
         for path, folders, files in os.walk(self.execution_folder):
@@ -103,17 +103,19 @@ class Job(abc.ABC):
     def inputs(self) -> Generator[Path, None, None]:
         return get_files_from_dir_recursively(self.inputs_folder)
 
-    def get_input_filesizes(self) -> Dict[str, str]:
-        return self._size_calculation(self.inputs(), self.inputs_folder)
+    def get_input_filesizes(self, human_readable: bool) -> Dict[str, str]:
+        return self._size_calculation(self.inputs(), self.inputs_folder,
+                                      human_readable)
 
-    def get_output_filesizes(self) -> Dict[str, str]:
-        return self._size_calculation(self.outputs(), self.execution_folder)
+    def get_output_filesizes(self, human_readable: bool) -> Dict[str, str]:
+        return self._size_calculation(self.outputs(), self.execution_folder,
+                                      human_readable)
 
-    def _size_calculation(self, files: Iterable[Path], relative_to: Path
-                          ) -> Dict[str, str]:
+    def _size_calculation(self, files: Iterable[Path], relative_to: Path,
+                          human_readable: bool) -> Dict[str, str]:
         int_to_str: Callable[[int], str] = (
             functools.partial(naturalsize, binary=True)
-            if self.human_readable else str)
+            if human_readable else str)
         return {
             str(path.relative_to(relative_to)):
                 int_to_str(path.stat().st_size)
@@ -154,8 +156,16 @@ def slurm_number(value: str) -> float:
 
 
 def slurm_time(value: str) -> int:
-    hours, minutes, seconds = value.split(":")
-    return int(hours) * 3600 + int(minutes) * 60 + int(seconds)
+    if "-" in value:
+        days, time = value.split("-")
+    else:
+        days = "0"
+        time = value
+    hours, minutes, seconds = time.split(":")
+    return (int(days) * 24 * 3600 +
+            int(hours) * 3600 +
+            int(minutes) * 60 +
+            int(seconds))
 
 
 class SlurmJob(Job):
@@ -193,7 +203,7 @@ class SlurmJob(Job):
 
         return result.stdout.decode()
 
-    def get_cluster_accounting(self) -> Dict[str, str]:
+    def get_cluster_accounting(self, human_readable: bool) -> Dict[str, str]:
         cluster_accounting = self._cluster_account_command()
         lines = cluster_accounting.splitlines(keepends=False)
         headers = lines[0].split("|")
@@ -203,6 +213,12 @@ class SlurmJob(Job):
         batch_dict = dict(zip(headers, batch_usage))
         batch_dict["Timelimit"] = total_dict["Timelimit"]
         for key in ["MaxRSS", "MaxVMSize", "MaxDiskRead", "MaxDiskWrite"]:
-            batch_dict[key] = naturalsize(slurm_number(batch_dict[key]),
-                                          binary=True)
+            bytes_number = slurm_number(batch_dict[key])
+            if human_readable:
+                batch_dict[key] = naturalsize(bytes_number, binary=True)
+            else:
+                batch_dict[key] = bytes_number
+        if not human_readable:
+            for key in ["Timelimit", "Elapsed", "CPUTime"]:
+                batch_dict[key] = str(slurm_time(batch_dict[key]))
         return batch_dict
