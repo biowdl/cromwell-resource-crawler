@@ -19,13 +19,14 @@
 # SOFTWARE.
 
 import abc
+import functools
 import json
 import os
 import re
 import subprocess
 from abc import abstractmethod
 from pathlib import Path
-from typing import Any, Dict, Generator, Iterable, List, Union
+from typing import Any, Dict, Generator, Iterable, List, Union, Callable
 
 from humanize.filesize import naturalsize
 
@@ -51,32 +52,45 @@ def get_files_from_dir_recursively(path: Union[os.PathLike, str]
 
 
 class Job(abc.ABC):
-    def __init__(self, path: Path):
+    def __init__(self, path: Path, human_readable: bool = True):
         self.path: Path = path
         self.execution_folder: Path = path / "execution"
         self.inputs_folder: Path = path / "inputs"
         self.name = self._get_name()
-
-    def to_json(self) -> Dict[str, Any]:
-        return dict(zip(self.properties(), self.values()))
+        self.human_readable = human_readable
 
     @abstractmethod
-    def properties(self) -> List[str]:
+    def property_order(self) -> List[str]:
         return ["Name", "ExitCode", "Inputs", "Outputs", "Path"]
 
     @abstractmethod
-    def values(self) -> List[str]:
-        return [self.name,
-                str(self.get_exit_code()),
-                json.dumps(self.get_input_filesizes()),
-                json.dumps(self.get_output_filesizes()),
-                str(self.path)]
+    def get_properties(self) -> Dict[str, Any]:
+        return {
+            "Name": self.name,
+            "ExitCode": str(self.get_exit_code()),
+            "Inputs": self.get_input_filesizes(),
+            "Outputs": self.get_output_filesizes(),
+            "Path": str(self.path)
+        }
+
+    def tsv_properties(self) -> Generator[str, None, None]:
+        properties = self.get_properties()
+        for key in self.property_order():
+            value = properties[key]
+            # jsonify containers
+            if not isinstance(value, str) and hasattr(value, "__getitem__"):
+                yield json.dumps(value)
+            else:
+                yield value
+
+    def to_json(self) -> Dict[str, Any]:
+        return self.get_properties()
 
     def tsv_header(self) -> str:
-        return "\t".join(self.properties()) + os.linesep
+        return "\t".join(self.property_order()) + os.linesep
 
     def tsv_row(self) -> str:
-        return "\t".join(self.values()) + os.linesep
+        return "\t".join(self.tsv_properties()) + os.linesep
 
     def outputs(self) -> Generator[Path, None, None]:
         for path, folders, files in os.walk(self.execution_folder):
@@ -92,14 +106,17 @@ class Job(abc.ABC):
     def get_input_filesizes(self) -> Dict[str, str]:
         return self._size_calculation(self.inputs(), self.inputs_folder)
 
-    def get_output_filesizes(self) -> Dict[str, int]:
+    def get_output_filesizes(self) -> Dict[str, str]:
         return self._size_calculation(self.outputs(), self.execution_folder)
 
-    @staticmethod
-    def _size_calculation(files: Iterable[Path], relative_to: Path):
+    def _size_calculation(self, files: Iterable[Path], relative_to: Path
+                          ) -> Dict[str, str]:
+        int_to_str: Callable[[int], str] = (
+            functools.partial(naturalsize, binary=True)
+            if self.human_readable else str)
         return {
             str(path.relative_to(relative_to)):
-                naturalsize(path.stat().st_size, binary=True)
+                int_to_str(path.stat().st_size)
             for path in files
         }
 
@@ -114,11 +131,11 @@ class Job(abc.ABC):
 
 
 class LocalJob(Job):
-    def properties(self) -> List[str]:
-        return super().properties()
+    def property_order(self) -> List[str]:
+        return super().property_order()
 
-    def values(self) -> List[str]:
-        return super().values()
+    def get_properties(self):
+        return super().get_properties()
 
 
 DEFAULT_SLURM_JOB_REGEX = re.compile(r"Submitted batch job (\d+).*")
@@ -152,16 +169,15 @@ class SlurmJob(Job):
         return ["State", "Timelimit", "Elapsed", "CPUTime", "ReqCPUs",
                 "ReqMem", "MaxRSS", "MaxVMSize", "MaxDiskRead", "MaxDiskWrite"]
 
-    def properties(self) -> List[str]:
-        super_props = super().properties()
+    def property_order(self) -> List[str]:
+        super_order = super().property_order()
         # Insert cluster properties after name and exit code.
-        return super_props[:2] + self.cluster_properties() + super_props[2:]
+        return super_order[:2] + self.cluster_properties() + super_order[2:]
 
-    def values(self) -> List[str]:
-        super_values = super().values()
-        return (super_values[:2] +
-                list(self.get_cluster_accounting().values()) +
-                super_values[2:])
+    def get_properties(self):
+        props = super().get_properties()
+        props.update(self.get_cluster_accounting())
+        return props
 
     def job_id(self) -> str:
         match = self._job_regex.match(self.stdout_submit.read_text())
