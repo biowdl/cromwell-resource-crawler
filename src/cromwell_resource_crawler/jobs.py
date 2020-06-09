@@ -215,7 +215,8 @@ class SlurmJob(Job):
         total_dict = dict(zip(headers, total_usage))
         batch_dict = dict(zip(headers, batch_usage))
         batch_dict["Timelimit"] = total_dict["Timelimit"]
-        for key in ["MaxRSS", "MaxVMSize", "MaxDiskRead", "MaxDiskWrite"]:
+        for key in ["ReqMem", "MaxRSS", "MaxVMSize", "MaxDiskRead",
+                    "MaxDiskWrite"]:
             bytes_number = slurm_number(batch_dict[key])
             if human_readable:
                 batch_dict[key] = naturalsize(bytes_number, binary=True)
