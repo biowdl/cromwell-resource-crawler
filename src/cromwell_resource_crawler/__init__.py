@@ -139,7 +139,7 @@ def argument_parser() -> argparse.ArgumentParser:
                         help="Which backend the jobs have been running on. "
                              "This determines how the resource usages are "
                              "acquired.")
-    parser.add_argument("-f", "--output-format", type=str,
+    parser.add_argument("-f", "--format", type=str,
                         choices=["json", "tsv"], default="tsv")
     parser.add_argument("-o", "--output", default=DEFAULT_OUTPUT,
                         required=not bool(DEFAULT_OUTPUT),
@@ -165,10 +165,10 @@ def main():
     if args.filter is not None:
         jobs = (job for job in jobs if args.filter in str(job.path))
     with open(args.output, "wt") as output_h:
-        if args.output_format == "json":
+        if args.format == "json":
             json.dump(jobs_to_json_dict(jobs, workflow_folder, not args.raw
                                         ), output_h)
-        elif args.output_format == "tsv":
+        elif args.format == "tsv":
             for line in jobs_to_tsv(jobs, not args.raw):
                 output_h.write(line)
 

@@ -42,6 +42,7 @@ COMPLETED||00:00:02|00:00:02|1|128Mn|984K|278348K|0|0"""
     setattr(job, "_cluster_account_command", return_accounting)
     return job
 
+
 def test_exit_code_correct(localjob):
     assert localjob.get_exit_code() == 0
 
