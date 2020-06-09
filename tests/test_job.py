@@ -32,8 +32,15 @@ def localjob() -> LocalJob:
 
 @pytest.fixture(scope="module")
 def slurmjob() -> SlurmJob:
-    return SlurmJob(TEST_DATA / "call-ConvertDockerTagsFile")
+    job = SlurmJob(TEST_DATA / "call-ConvertDockerTagsFile")
 
+    def return_accounting() -> str:
+        return """State|Timelimit|Elapsed|CPUTime|ReqCPUS|ReqMem|MaxRSS|MaxVMSize|MaxDiskRead|MaxDiskWrite
+COMPLETED|00:01:00|00:00:02|00:00:02|1|128Mn||||
+COMPLETED||00:00:02|00:00:02|1|128Mn|1340K|344240K|0|0
+COMPLETED||00:00:02|00:00:02|1|128Mn|984K|278348K|0|0"""
+    setattr(job, "_cluster_account_command", return_accounting)
+    return job
 
 def test_exit_code_correct(localjob):
     assert localjob.get_exit_code() == 0
@@ -71,3 +78,15 @@ def test_name(localjob):
 
 def test_job_id(slurmjob):
     assert slurmjob.job_id() == "362781"
+
+
+def test_properties_human_readable(slurmjob):
+    props = slurmjob.get_properties(True)
+    assert props["CPUTime"] == "00:00:02"
+    assert props["MaxRSS"] == "1.3 MiB"
+
+
+def test_properties_raw(slurmjob):
+    props = slurmjob.get_properties(False)
+    assert props["CPUTime"] == "2"
+    assert props["MaxRSS"] == "1372160"
