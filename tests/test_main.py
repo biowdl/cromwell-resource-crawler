@@ -52,6 +52,6 @@ def test_json():
     job = output["MultisampleCalling"]["49fed616-9748-4aca-bd2e-90c0ccb43116"][
         "call-calculateRegions"]["CalculateRegions"][
         "8b79bccf-6989-4068-8cb5-a811f0aff13f"]["call-mergeBeds"]
-    assert job["ExitCode"] == "0"
+    assert job["ExitCode"] == 0
     assert set(job["Inputs"].keys()) == {"1489649706/y_non_par.bed",
                                          "1489649706/x_non_par.bed"}

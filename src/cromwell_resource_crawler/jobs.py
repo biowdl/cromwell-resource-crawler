@@ -19,6 +19,7 @@
 # SOFTWARE.
 
 import abc
+import datetime
 import json
 import os
 import re
@@ -65,13 +66,17 @@ class Job(abc.ABC):
 
     @abstractmethod
     def get_properties(self, human_readable: bool) -> Dict[str, Any]:
-        return {
+        props = {
             "Name": self.name,
-            "ExitCode": str(self.get_exit_code()),
-            "Inputs": self.get_input_filesizes(human_readable),
-            "Outputs": self.get_output_filesizes(human_readable),
+            "ExitCode": self.get_exit_code(),
+            "Inputs": self.get_input_filesizes(),
+            "Outputs": self.get_output_filesizes(),
             "Path": str(self.path)
         }
+        if human_readable:
+            props["Inputs"] = self.sizes_to_human_readable(props["Inputs"])
+            props["Outputs"] = self.sizes_to_human_readable(props["Outputs"])
+        return props
 
     def tsv_properties(self, human_readable: bool
                        ) -> Generator[str, None, None]:
@@ -82,7 +87,7 @@ class Job(abc.ABC):
             if not isinstance(value, str) and hasattr(value, "__getitem__"):
                 yield json.dumps(value)
             else:
-                yield value
+                yield str(value)
 
     def to_json(self, human_readable) -> Dict[str, Any]:
         return self.get_properties(human_readable)
@@ -104,31 +109,22 @@ class Job(abc.ABC):
     def inputs(self) -> Generator[Path, None, None]:
         return get_files_from_dir_recursively(self.inputs_folder)
 
-    def get_input_filesizes(self, human_readable: bool) -> Dict[str, str]:
-        return self._size_calculation(self.inputs(), self.inputs_folder,
-                                      human_readable)
+    @staticmethod
+    def sizes_to_human_readable(sizes: Dict[str, int]):
+        return {path: naturalsize(size, binary=True)
+                for path, size in sizes.items()}
 
-    def get_output_filesizes(self, human_readable: bool) -> Dict[str, str]:
-        return self._size_calculation(self.outputs(), self.execution_folder,
-                                      human_readable)
+    def get_input_filesizes(self) -> Dict[str, int]:
+        return self._size_calculation(self.inputs(), self.inputs_folder)
+
+    def get_output_filesizes(self) -> Dict[str, int]:
+        return self._size_calculation(self.outputs(), self.execution_folder)
 
     @staticmethod
-    def _size_calculation(files: Iterable[Path], relative_to: Path,
-                          human_readable: bool) -> Dict[str, str]:
-        sizes: Dict[str, str] = {}
-        for path in files:
-            key = str(path.relative_to(relative_to))
-            # File existence needs to be checked. Sometimes broken symbolic
-            # links can be present.
-            if path.exists():
-                size = path.stat().st_size
-            else:
-                size = 0
-            if human_readable:
-                sizes[key] = naturalsize(size, binary=True)
-            else:
-                sizes[key] = str(size)
-        return sizes
+    def _size_calculation(files: Iterable[Path], relative_to: Path
+                          ) -> Dict[str, int]:
+        return {str(path.relative_to(relative_to)): path.stat().st_size
+                for path in files if path.exists()}
 
     def get_exit_code(self) -> int:
         return int(Path(self.execution_folder, "rc").read_text())
@@ -196,7 +192,15 @@ class SlurmJob(Job):
 
     def get_properties(self, human_readable: bool):
         props = super().get_properties(human_readable)
-        props.update(self.get_cluster_accounting(human_readable))
+        props.update(self.get_cluster_accounting())
+        if human_readable:
+            for key in ["ReqMem", "MaxRSS", "MaxVMSize", "MaxDiskRead",
+                        "MaxDiskWrite"]:
+                size = props[key]
+                props[key] = naturalsize(size, binary=True)
+            for key in ["Timelimit", "Elapsed", "CPUTime"]:
+                seconds = props[key]
+                props[key] = str(datetime.timedelta(seconds=seconds))
         return props
 
     def job_id(self) -> str:
@@ -213,7 +217,7 @@ class SlurmJob(Job):
 
         return result.stdout.decode()
 
-    def get_cluster_accounting(self, human_readable: bool) -> Dict[str, str]:
+    def get_cluster_accounting(self) -> Dict[str, str]:
         cluster_accounting = self._cluster_account_command()
         lines = cluster_accounting.splitlines(keepends=False)
         headers = lines[0].split("|")
@@ -224,12 +228,7 @@ class SlurmJob(Job):
         batch_dict["Timelimit"] = total_dict["Timelimit"]
         for key in ["ReqMem", "MaxRSS", "MaxVMSize", "MaxDiskRead",
                     "MaxDiskWrite"]:
-            bytes_number = slurm_number(batch_dict[key])
-            if human_readable:
-                batch_dict[key] = naturalsize(bytes_number, binary=True)
-            else:
-                batch_dict[key] = str(bytes_number)
-        if not human_readable:
-            for key in ["Timelimit", "Elapsed", "CPUTime"]:
-                batch_dict[key] = str(slurm_time(batch_dict[key]))
+            batch_dict[key] = slurm_number(batch_dict[key])
+        for key in ["Timelimit", "Elapsed", "CPUTime"]:
+            batch_dict[key] = slurm_time(batch_dict[key])
         return batch_dict

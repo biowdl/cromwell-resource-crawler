@@ -47,29 +47,16 @@ def test_exit_code_correct(localjob):
     assert localjob.get_exit_code() == 0
 
 
-def test_input_filesizes_human_readable(localjob):
-    assert localjob.get_input_filesizes(True) == {
-        "1599980398/dockerImages.yml": "1.9 KiB"
+def test_input_filesizes(localjob):
+    assert localjob.get_input_filesizes() == {
+        "1599980398/dockerImages.yml": 1988
     }
 
 
-def test_input_filesizes_raw(localjob):
-    assert localjob.get_input_filesizes(False) == {
-        "1599980398/dockerImages.yml": "1988"
-    }
-
-
-def test_output_filesize_human_readable(localjob):
-    assert localjob.get_output_filesizes(True) == {
-        "dockerImages.json": "1.3 KiB",
-        "nested_outputs/dummy_output": "34 Bytes"
-    }
-
-
-def test_output_filesize_raw(localjob):
-    assert localjob.get_output_filesizes(False) == {
-        "dockerImages.json": "1295",
-        "nested_outputs/dummy_output": "34"
+def test_output_filesize(localjob):
+    assert localjob.get_output_filesizes() == {
+        "dockerImages.json": 1295,
+        "nested_outputs/dummy_output": 34
     }
 
 
@@ -83,11 +70,11 @@ def test_job_id(slurmjob):
 
 def test_properties_human_readable(slurmjob):
     props = slurmjob.get_properties(True)
-    assert props["CPUTime"] == "00:00:02"
+    assert props["CPUTime"] == "0:00:02"
     assert props["MaxRSS"] == "1.3 MiB"
 
 
 def test_properties_raw(slurmjob):
     props = slurmjob.get_properties(False)
-    assert props["CPUTime"] == "2"
-    assert props["MaxRSS"] == "1372160"
+    assert props["CPUTime"] == 2
+    assert props["MaxRSS"] == 1372160
