@@ -226,12 +226,15 @@ class SlurmJob(Job):
         total_dict = dict(zip(headers, total_usage))
         batch_dict = dict(zip(headers, batch_usage))
         new_dict: Dict[str, Union[str, int]] = {}
-        batch_dict.pop("Timelimit")
-        new_dict["Timelimit"] = total_dict["Timelimit"]
         for key in ["ReqMem", "MaxRSS", "MaxVMSize", "MaxDiskRead",
                     "MaxDiskWrite"]:
             new_dict[key] = slurm_number(batch_dict.pop(key))
-        for key in ["Timelimit", "Elapsed", "CPUTime"]:
+        # Remove timelimit from batch_dict so we don't accidently overwrite the
+        # Timelimit value in new_dict later
+        batch_dict.pop("Timelimit")
+        # Timelimit is not set on the batch job level.
+        new_dict["Timelimit"] = slurm_time(total_dict["Timelimit"])
+        for key in ["Elapsed", "CPUTime"]:
             new_dict[key] = slurm_time(batch_dict.pop(key))
         # Add all remaining keys.
         new_dict.update(batch_dict)
