@@ -66,7 +66,7 @@ class Job(abc.ABC):
 
     @abstractmethod
     def get_properties(self, human_readable: bool) -> Dict[str, Any]:
-        props = {
+        props: Dict[str, Any] = {
             "Name": self.name,
             "ExitCode": self.get_exit_code(),
             "Inputs": self.get_input_filesizes(),
@@ -217,7 +217,7 @@ class SlurmJob(Job):
 
         return result.stdout.decode()
 
-    def get_cluster_accounting(self) -> Dict[str, str]:
+    def get_cluster_accounting(self) -> Dict[str, Union[str, int]]:
         cluster_accounting = self._cluster_account_command()
         lines = cluster_accounting.splitlines(keepends=False)
         headers = lines[0].split("|")
@@ -225,10 +225,14 @@ class SlurmJob(Job):
         batch_usage = lines[2].split("|")
         total_dict = dict(zip(headers, total_usage))
         batch_dict = dict(zip(headers, batch_usage))
-        batch_dict["Timelimit"] = total_dict["Timelimit"]
+        new_dict: Dict[str, Union[str, int]] = {}
+        batch_dict.pop("Timelimit")
+        new_dict["Timelimit"] = total_dict["Timelimit"]
         for key in ["ReqMem", "MaxRSS", "MaxVMSize", "MaxDiskRead",
                     "MaxDiskWrite"]:
-            batch_dict[key] = slurm_number(batch_dict[key])
+            new_dict[key] = slurm_number(batch_dict.pop(key))
         for key in ["Timelimit", "Elapsed", "CPUTime"]:
-            batch_dict[key] = slurm_time(batch_dict[key])
-        return batch_dict
+            new_dict[key] = slurm_time(batch_dict.pop(key))
+        # Add all remaining keys.
+        new_dict.update(batch_dict)
+        return new_dict
