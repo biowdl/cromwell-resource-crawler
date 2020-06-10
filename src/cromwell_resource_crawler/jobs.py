@@ -152,27 +152,6 @@ SLURM_SUFFIXES = {"K": 1024, "M": 1024**2, "G": 1024**3, "T": 1024**4,
                   "Kn": 1024, "Mn": 1024**2, "Gn": 1024**3, "Tn": 1024**4}
 
 
-def slurm_number(value: str) -> int:
-    for suffix, multiplier in SLURM_SUFFIXES.items():
-        if value.endswith(suffix):
-
-            return round(float(value.rstrip(suffix)) * multiplier)
-    return int(value)
-
-
-def slurm_time(value: str) -> int:
-    if "-" in value:
-        days, time = value.split("-")
-    else:
-        days = "0"
-        time = value
-    hours, minutes, seconds = time.split(":")
-    return (int(days) * 24 * 3600 +
-            int(hours) * 3600 +
-            int(minutes) * 60 +
-            int(seconds))
-
-
 class SlurmJob(Job):
     def __init__(self, path: Path,
                  job_regex: re.Pattern = DEFAULT_SLURM_JOB_REGEX):
@@ -228,14 +207,32 @@ class SlurmJob(Job):
         new_dict: Dict[str, Union[str, int]] = {}
         for key in ["ReqMem", "MaxRSS", "MaxVMSize", "MaxDiskRead",
                     "MaxDiskWrite"]:
-            new_dict[key] = slurm_number(batch_dict.pop(key))
+            new_dict[key] = self.slurm_number(batch_dict.pop(key))
         # Remove timelimit from batch_dict so we don't accidently overwrite the
         # Timelimit value in new_dict later
         batch_dict.pop("Timelimit")
         # Timelimit is not set on the batch job level.
-        new_dict["Timelimit"] = slurm_time(total_dict["Timelimit"])
+        new_dict["Timelimit"] = self.slurm_time(total_dict["Timelimit"])
         for key in ["Elapsed", "CPUTime"]:
-            new_dict[key] = slurm_time(batch_dict.pop(key))
+            new_dict[key] = self.slurm_time(batch_dict.pop(key))
         # Add all remaining keys.
         new_dict.update(batch_dict)
         return new_dict
+
+    @staticmethod
+    def slurm_number(value: str) -> int:
+        for suffix, multiplier in SLURM_SUFFIXES.items():
+            if value.endswith(suffix):
+                return round(float(value.rstrip(suffix)) * multiplier)
+        return int(value)
+
+    @staticmethod
+    def slurm_time(value: str) -> int:
+        if "-" in value:
+            days, time = value.split("-")
+        else:
+            days = "0"
+            time = value
+        hours, minutes, seconds = time.split(":")
+        return (int(days) * 24 * 3600 + int(hours) * 3600 + int(minutes) * 60 +
+                int(seconds))
