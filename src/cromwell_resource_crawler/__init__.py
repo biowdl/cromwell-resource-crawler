@@ -31,6 +31,13 @@ DEFAULT_OUTPUT = "/dev/stdout" if sys.platform in ["linux", "darwin"] else None
 
 def crawl_folder(folder: Path, jobclass: Type[Job] = LocalJob
                  ) -> Generator[Job, None, None]:
+    """
+    Search a folder recursively for cromwell job folders by looking for folders
+    named "execution".
+    :param folder: A cromwell-executions folder or one of its subdirectories
+    :param jobclass: The Job-type class to return.
+    :return: Job-type classes that represent a job folder.
+    """
     if folder.name == "cacheCopy":
         # cacheCopy folders are not executed and do not contain the files to
         # calculate resource requirements
@@ -49,6 +56,13 @@ def crawl_folder(folder: Path, jobclass: Type[Job] = LocalJob
 def jobs_to_json_dict(jobs: Iterable[Job],
                       start_path: Optional[Path] = None,
                       human_readable: bool = True) -> Dict:
+    """
+    Converts a list of jobs to a hierarchic dictionary.
+    :param jobs: An iterable of jobs.
+    :param start_path: The path to which the job paths should be relative.
+    :param human_readable: Whether to store human readable values
+    :return: A hierarchic dictionary that can be converted to JSON.
+    """
     json_dict: Dict[str, Any] = {}
     for job in jobs:
         job_path = (job.path if start_path is None
@@ -58,12 +72,19 @@ def jobs_to_json_dict(jobs: Iterable[Job],
             if part not in part_dict:
                 part_dict[part] = {}
             part_dict = part_dict[part]
-        part_dict[job_path.parts[-1]] = job.to_json(human_readable)
+        part_dict[job_path.parts[-1]] = job.get_properties(human_readable)
     return json_dict
 
 
 def jobs_to_tsv(jobs: Iterable[Job], human_readable: bool = True
                 ) -> Generator[str, None, None]:
+    """
+    Convert an iterable of jobs to tsv.
+    :param jobs: The iterable of jobs.
+    :param human_readable: Whether the outputs should be human readable,
+    otherwise raw values are used.
+    :return: A string generator.
+    """
     job_iter = iter(jobs)
     try:
         first_job = next(job_iter)
@@ -122,5 +143,5 @@ def main():
                 output_h.write(line)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     main()

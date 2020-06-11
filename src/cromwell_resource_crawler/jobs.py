@@ -32,6 +32,10 @@ from humanize.filesize import naturalsize
 
 
 def cromwell_execution_folder_reserved_files() -> Set[str]:
+    """
+    Return filenames which are used by cromwell itself.
+    :return: A set of filenames
+    """
     reserved_files: Set[str] = set()
     prefixes = ["stdout", "script", "stderr"]
     suffixes = ["", ".submit", ".check", ".background"]
@@ -48,12 +52,21 @@ CROMWELL_EXECUTION_FOLDER_RESERVED_FILES = \
 
 def get_files_from_dir_recursively(path: Union[os.PathLike, str]
                                    ) -> Generator[Path, None, None]:
+    """
+    Version of os.walk that yields only files.
+    :param path: The path to search.
+    :return: Path object for every file found.
+    """
     for base_path, dirs, files in os.walk(path):
         for file in files:
             yield Path(base_path, file)
 
 
 class Job(abc.ABC):
+    """
+    The base class for all Job-types. Implements all the basic methods for
+    analyzing the output.
+    """
     def __init__(self, path: Path):
         self.path: Path = path
         self.execution_folder: Path = path / "execution"
@@ -62,24 +75,39 @@ class Job(abc.ABC):
 
     @abstractmethod
     def property_order(self) -> List[str]:
+        """
+        A list of fields that should be in the TSV header.
+        """
         return ["Name", "ExitCode", "Inputs", "Outputs", "Path"]
 
     @abstractmethod
     def get_properties(self, human_readable: bool) -> Dict[str, Any]:
-        props: Dict[str, Any] = {
+        """
+        Get a dictionary of properties
+        :param human_readable: Whether properties should be converted to a
+        human-readable format or kept as raw values.
+        :return: A dictionary
+        """
+        inputs = self.get_input_filesizes()
+        outputs = self.get_output_filesizes()
+        return {
             "Name": self.name,
+            "Inputs": (self._sizes_to_human_readable(inputs)
+                           if human_readable else inputs),
+            "Outputs": (self._sizes_to_human_readable(inputs)
+                            if human_readable else outputs),
             "ExitCode": self.get_exit_code(),
-            "Inputs": self.get_input_filesizes(),
-            "Outputs": self.get_output_filesizes(),
             "Path": str(self.path)
         }
-        if human_readable:
-            props["Inputs"] = self.sizes_to_human_readable(props["Inputs"])
-            props["Outputs"] = self.sizes_to_human_readable(props["Outputs"])
-        return props
 
     def tsv_properties(self, human_readable: bool
                        ) -> Generator[str, None, None]:
+        """
+        Convert all properties to a string value.
+        :param human_readable: Whether properties should be converted to a
+        human-readable format or kept as raw values.
+        :return: A string generator
+        """
         properties = self.get_properties(human_readable)
         for key in self.property_order():
             value = properties[key]
@@ -89,9 +117,6 @@ class Job(abc.ABC):
             else:
                 yield str(value)
 
-    def to_json(self, human_readable) -> Dict[str, Any]:
-        return self.get_properties(human_readable)
-
     def tsv_header(self) -> str:
         return "\t".join(self.property_order()) + os.linesep
 
@@ -99,6 +124,9 @@ class Job(abc.ABC):
         return "\t".join(self.tsv_properties(human_readable)) + os.linesep
 
     def outputs(self) -> Generator[Path, None, None]:
+        """
+        A generator of all outputs created by the job.
+        """
         for path, folders, files in os.walk(self.execution_folder):
             for file in files:
                 if file not in CROMWELL_EXECUTION_FOLDER_RESERVED_FILES:
@@ -107,10 +135,13 @@ class Job(abc.ABC):
                 yield from get_files_from_dir_recursively(Path(path, folder))
 
     def inputs(self) -> Generator[Path, None, None]:
+        """
+        A generator of all inputs used by the job.
+        """
         return get_files_from_dir_recursively(self.inputs_folder)
 
     @staticmethod
-    def sizes_to_human_readable(sizes: Dict[str, int]):
+    def _sizes_to_human_readable(sizes: Dict[str, int]):
         return {path: naturalsize(size, binary=True)
                 for path, size in sizes.items()}
 
@@ -137,6 +168,7 @@ class Job(abc.ABC):
 
 
 class LocalJob(Job):
+    """A Job-type class for jobs that have been locally."""
     def property_order(self) -> List[str]:
         return super().property_order()
 
@@ -153,6 +185,8 @@ SLURM_SUFFIXES = {"K": 1024, "M": 1024**2, "G": 1024**3, "T": 1024**4,
 
 
 class SlurmJob(Job):
+    """A Job-type class with functions for querying the SLURM cluster for used
+    resources."""
     def __init__(self, path: Path,
                  job_regex: re.Pattern = DEFAULT_SLURM_JOB_REGEX):
         super().__init__(path)
@@ -161,6 +195,7 @@ class SlurmJob(Job):
 
     @staticmethod
     def cluster_properties() -> List[str]:
+        """These values are queried from sacct and reported in this order."""
         return ["State", "Timelimit", "Elapsed", "CPUTime", "ReqCPUS",
                 "ReqMem", "MaxRSS", "MaxVMSize", "MaxDiskRead", "MaxDiskWrite"]
 
@@ -197,6 +232,10 @@ class SlurmJob(Job):
         return result.stdout.decode()
 
     def get_cluster_accounting(self) -> Dict[str, Union[str, int]]:
+        """
+        Performs the cluster accounting command and returns a dict of
+        properties
+        """
         cluster_accounting = self._cluster_account_command()
         lines = cluster_accounting.splitlines(keepends=False)
         headers = lines[0].split("|")
@@ -221,6 +260,7 @@ class SlurmJob(Job):
 
     @staticmethod
     def slurm_number(value: str) -> int:
+        """Convert a slurm type number such as 120123K to true bytes."""
         for suffix, multiplier in SLURM_SUFFIXES.items():
             if value.endswith(suffix):
                 return round(float(value.rstrip(suffix)) * multiplier)
@@ -228,6 +268,7 @@ class SlurmJob(Job):
 
     @staticmethod
     def slurm_time(value: str) -> int:
+        """Converts a slurm time such as 1-13:32:45 to seconds."""
         if "-" in value:
             days, time = value.split("-")
         else:
