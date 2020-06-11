@@ -30,7 +30,7 @@ DEFAULT_OUTPUT = "/dev/stdout" if sys.platform in ["linux", "darwin"] else None
 
 
 def crawl_folder(folder: Path, jobclass: Type[Job] = LocalJob
-                  ) -> Generator[Job, None, None]:
+                 ) -> Generator[Job, None, None]:
     if folder.name == "cacheCopy":
         # cacheCopy folders are not executed and do not contain the files to
         # calculate resource requirements
