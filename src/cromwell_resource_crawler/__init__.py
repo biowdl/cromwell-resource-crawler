@@ -31,7 +31,11 @@ DEFAULT_OUTPUT = "/dev/stdout" if sys.platform in ["linux", "darwin"] else None
 
 def crawl_folder(folder: Path, jobclass: Type[Job] = LocalJob
                   ) -> Generator[Job, None, None]:
-    if Path(folder, "execution").exists():
+    if folder.name == "cacheCopy":
+        # cacheCopy folders are not executed and do not contain the files to
+        # calculate resource requirements
+        return
+    elif Path(folder, "execution").exists():
         yield jobclass(folder)
         for folder in folder.iterdir():
             if folder.name.startswith("attempt-"):
