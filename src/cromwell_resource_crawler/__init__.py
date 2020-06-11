@@ -19,6 +19,7 @@
 # SOFTWARE.
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 from typing import Any, Dict, Generator, Iterable, Optional, Type
@@ -28,73 +29,17 @@ from .jobs import Job, LocalJob, SlurmJob
 DEFAULT_OUTPUT = "/dev/stdout" if sys.platform in ["linux", "darwin"] else None
 
 
-def is_uuid_folder(folder: Path) -> bool:
-    if not folder.is_dir():
-        return False
-    parts = folder.name.split("-")
-    if not len(parts) == 5:
-        return False
-    if not [len(part) for part in parts] == [8, 4, 4, 4, 12]:
-        return False
-    # Each part is a hexadecimal number
-    for part in parts:
-        try:
-            int(part, 16)
-        except ValueError:
-            return False
-    return True
-
-
 def crawl_folder(folder: Path, jobclass: Type[Job] = LocalJob
-                 ) -> Generator[Job, None, None]:
-    if not folder.is_dir():
-        raise ValueError(f"{folder} is not a directory!")
-    if folder.name == "cromwell-executions":
-        for path in folder.iterdir():
-            if not path.is_dir():
-                continue
-            if "-" not in path.name:
-                yield from crawl_workflow_folder(path, jobclass)
-    elif folder.name.startswith("call-"):
-        yield from crawl_call_folder(folder, jobclass)
-    elif Path(folder, "execution").exists():  # catches shard-X and attempt-X
-        yield from crawl_call_folder(folder, jobclass)
-    elif folder.name.startswith("shard-"):  # for shards with workflows
-        for path in folder.iterdir():
-            yield from crawl_workflow_folder(path)
-    elif is_uuid_folder(folder):
-        yield from crawl_uuid_folder(folder, jobclass)
-    else:
-        yield from crawl_workflow_folder(folder, jobclass)
-
-
-def crawl_workflow_folder(workflow_folder: Path, jobclass: Type[Job] = LocalJob
-                          ) -> Generator[Job, None, None]:
-    for uuid_folder in workflow_folder.iterdir():
-        yield from crawl_uuid_folder(uuid_folder, jobclass=jobclass)
-
-
-def crawl_uuid_folder(uuid_folder: Path, jobclass: Type[Job] = LocalJob
-                      ) -> Generator[Job, None, None]:
-    for call_folder in uuid_folder.iterdir():
-        yield from crawl_call_folder(call_folder, jobclass)
-
-
-def crawl_call_folder(call_folder: Path, jobclass: Type[Job] = LocalJob
-                      ) -> Generator[Job, None, None]:
-    if Path(call_folder, "execution").exists():
-        yield jobclass(call_folder)
-        for folder in call_folder.iterdir():
+                  ) -> Generator[Job, None, None]:
+    if Path(folder, "execution").exists():
+        yield jobclass(folder)
+        for folder in folder.iterdir():
             if folder.name.startswith("attempt-"):
                 yield jobclass(folder)
-    elif Path(call_folder, "cacheCopy").exists():
-        return
     else:
-        for folder in call_folder.iterdir():
-            if folder.name.startswith("shard-"):
-                yield from crawl_call_folder(folder, jobclass)
-            else:
-                yield from crawl_workflow_folder(folder, jobclass)
+        for dir_entry in os.scandir(folder):  # type: os.DirEntry
+            if dir_entry.is_dir():
+                yield from crawl_folder(Path(folder, dir_entry.name))
 
 
 def jobs_to_json_dict(jobs: Iterable[Job],
