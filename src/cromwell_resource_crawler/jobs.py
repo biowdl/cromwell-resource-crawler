@@ -90,12 +90,13 @@ class Job(abc.ABC):
         """
         inputs = self.get_input_filesizes()
         outputs = self.get_output_filesizes()
+        if human_readable:
+            inputs = self._sizes_to_human_readable(inputs)
+            outputs = self._sizes_to_human_readable(outputs)
         return {
             "Name": self.name,
-            "Inputs": (self._sizes_to_human_readable(inputs)
-                           if human_readable else inputs),
-            "Outputs": (self._sizes_to_human_readable(inputs)
-                            if human_readable else outputs),
+            "Inputs": inputs,
+            "Outputs": outputs,
             "ExitCode": self.get_exit_code(),
             "Path": str(self.path)
         }
