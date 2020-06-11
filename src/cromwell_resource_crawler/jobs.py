@@ -225,6 +225,8 @@ class SlurmJob(Job):
         return match.group(1)
 
     def _cluster_account_command(self) -> str:
+        # --parsable2 is easiest to parse since it works well with the
+        # string.split('|') method.
         args = ("sacct", "-j", self.job_id(), "--parsable2",
                 "--format", ",".join(self.cluster_properties()))
         result = subprocess.run(args, stdout=subprocess.PIPE,
