@@ -119,10 +119,10 @@ class Job(abc.ABC):
                 yield str(value)
 
     def tsv_header(self) -> str:
-        return "\t".join(self.property_order()) + os.linesep
+        return "\t".join(self.property_order()) + '\n'
 
     def tsv_row(self, human_readable) -> str:
-        return "\t".join(self.tsv_properties(human_readable)) + os.linesep
+        return "\t".join(self.tsv_properties(human_readable)) + '\n'
 
     def outputs(self) -> Generator[Path, None, None]:
         """
