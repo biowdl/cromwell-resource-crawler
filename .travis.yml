@@ -1,5 +1,5 @@
 language: python
-python: 3.6
+python: 3.7
 
 install:
   - pip install tox
@@ -9,12 +9,10 @@ script:
 matrix:
   include:
     - env: TOX_ENV=lint
-    - python: 3.6
-      env: TOX_ENV=py36
+    - python: 3.7
+      env: TOX_ENV=py37
       after_success:
         - pip install codecov
         - codecov -v
-    - python: 3.7
-      env: TOX_ENV=py37
     - python: 3.8
       env: TOX_ENV=py38
