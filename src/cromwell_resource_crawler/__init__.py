@@ -50,7 +50,7 @@ def crawl_folder(folder: Path, jobclass: Type[Job] = LocalJob
     else:
         for dir_entry in os.scandir(folder):  # type: os.DirEntry
             if dir_entry.is_dir():
-                yield from crawl_folder(Path(folder, dir_entry.name))
+                yield from crawl_folder(Path(folder, dir_entry.name), jobclass)
 
 
 def jobs_to_json_dict(jobs: Iterable[Job],
