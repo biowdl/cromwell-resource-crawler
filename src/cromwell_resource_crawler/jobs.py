@@ -111,7 +111,9 @@ class Job(abc.ABC):
         """
         properties = self.get_properties(human_readable)
         for key in self.property_order():
-            value = properties[key]
+            # Get prevents errors when a certain property is not present.
+            # This can happen on cluster jobs.
+            value = properties.get(key, "")
             # jsonify containers
             if not isinstance(value, str) and hasattr(value, "__getitem__"):
                 yield json.dumps(value)
@@ -185,6 +187,10 @@ SLURM_SUFFIXES = {"K": 1024, "M": 1024**2, "G": 1024**3, "T": 1024**4,
                   "Kn": 1024, "Mn": 1024**2, "Gn": 1024**3, "Tn": 1024**4}
 
 
+class SlurmError(Exception):
+    pass
+
+
 class SlurmJob(Job):
     """A Job-type class with functions for querying the SLURM cluster for used
     resources."""
@@ -207,7 +213,12 @@ class SlurmJob(Job):
 
     def get_properties(self, human_readable: bool):
         props = super().get_properties(human_readable)
-        props.update(self.get_cluster_accounting())
+        try:
+            props.update(self.get_cluster_accounting())
+        except SlurmError:
+            # Don't crash if one of the jobs cannot be found.
+            # Return basic properties instead.
+            return props
         if human_readable:
             for key in ["ReqMem", "MaxRSS", "MaxVMSize", "MaxDiskRead",
                         "MaxDiskWrite"]:
@@ -243,7 +254,10 @@ class SlurmJob(Job):
         lines = cluster_accounting.splitlines(keepends=False)
         headers = lines[0].split("|")
         total_usage = lines[1].split("|")
-        batch_usage = lines[2].split("|")
+        if len(lines) > 2:
+            batch_usage = lines[2].split("|")
+        else:
+            raise SlurmError("Job has no batch properties.")
         total_dict = dict(zip(headers, total_usage))
         batch_dict = dict(zip(headers, batch_usage))
         new_dict: Dict[str, Union[str, int]] = {}
