@@ -40,11 +40,12 @@ setup(
     classifiers=[
         "Programming Language :: Python :: 3 :: Only",
         "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "License :: OSI Approved :: MIT License"
     ],
-    python_requires=">=3.7",  # We need ordered dicts.
+    python_requires=">=3.6",  # F-strings
     install_requires=["humanize >=2.0.0"],
     entry_points={
         'console_scripts': [
