@@ -200,12 +200,18 @@ class SlurmJob(Job):
         self._job_regex = job_regex
         self.stdout_submit: Path = self.execution_folder / "stdout.submit"
 
-    @staticmethod
-    def cluster_properties() -> List[str]:
-        """These values are queried from sacct and reported in this order."""
-        return ["State", "Timelimit", "Elapsed", "CPUTime", "TotalCPU",
-                "ReqCPUS", "ReqMem", "MaxRSS", "MaxVMSize", "MaxDiskRead",
+    @property
+    def _time_props(self):
+        return ["Timelimit", "Elapsed", "CPUTime", "TotalCPU"]
+
+    @property
+    def _size_props(self):
+        return ["ReqMem", "MaxRSS", "MaxVMSize", "MaxDiskRead",
                 "MaxDiskWrite"]
+
+    def cluster_properties(self) -> List[str]:
+        """These values are queried from sacct and reported in this order."""
+        return ["State"] + self._time_props + ["ReqCPUS"] + self._size_props
 
     def property_order(self) -> List[str]:
         super_order = super().property_order()
@@ -221,11 +227,10 @@ class SlurmJob(Job):
             # Return basic properties instead.
             return props
         if human_readable:
-            for key in ["ReqMem", "MaxRSS", "MaxVMSize", "MaxDiskRead",
-                        "MaxDiskWrite"]:
+            for key in self._size_props:
                 size = props[key]
                 props[key] = naturalsize(size, binary=True)
-            for key in ["Timelimit", "Elapsed", "CPUTime", "TotalCPU"]:
+            for key in self._time_props:
                 seconds = props[key]
                 props[key] = str(datetime.timedelta(seconds=seconds))
         return props
@@ -262,15 +267,11 @@ class SlurmJob(Job):
         total_dict = dict(zip(headers, total_usage))
         batch_dict = dict(zip(headers, batch_usage))
         new_dict: Dict[str, Union[str, int]] = {}
-        for key in ["ReqMem", "MaxRSS", "MaxVMSize", "MaxDiskRead",
-                    "MaxDiskWrite"]:
+        for key in self._size_props:
             new_dict[key] = self.slurm_number(batch_dict.pop(key))
-        # Remove timelimit from batch_dict so we don't accidently overwrite the
-        # Timelimit value in new_dict later
-        batch_dict.pop("Timelimit")
         # Timelimit is not set on the batch job level.
-        new_dict["Timelimit"] = self.slurm_time(total_dict["Timelimit"])
-        for key in ["Elapsed", "CPUTime"]:
+        batch_dict["Timelimit"] = total_dict["Timelimit"]
+        for key in self._time_props:
             new_dict[key] = self.slurm_time(batch_dict.pop(key))
         # Add all remaining keys.
         new_dict.update(batch_dict)
@@ -287,11 +288,19 @@ class SlurmJob(Job):
     @staticmethod
     def slurm_time(value: str) -> int:
         """Converts a slurm time such as 1-13:32:45 to seconds."""
-        if "-" in value:
-            days, time = value.split("-")
+        if "." in value:
+            # When time is smaller than one second format will be:
+            # MM:SS.microseconds
+            minutes_seconds, microseconds = value.split(".")
+            days = 0
+            hours = 0
+            minutes, seconds = minutes_seconds.split(":")
         else:
-            days = "0"
-            time = value
-        hours, minutes, seconds = time.split(":")
+            if "-" in value:
+                days, time = value.split("-")
+            else:
+                days = 0
+                time = value
+            hours, minutes, seconds = time.split(":")
         return (int(days) * 24 * 3600 + int(hours) * 3600 + int(minutes) * 60 +
                 int(seconds))

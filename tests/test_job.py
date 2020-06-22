@@ -35,10 +35,11 @@ def slurmjob() -> SlurmJob:
     job = SlurmJob(TEST_DATA / "call-ConvertDockerTagsFile")
 
     def return_accounting() -> str:
-        return """State|Timelimit|Elapsed|CPUTime|ReqCPUS|ReqMem|MaxRSS|MaxVMSize|MaxDiskRead|MaxDiskWrite
-COMPLETED|00:01:00|00:00:02|00:00:02|1|128Mn||||
-COMPLETED||00:00:02|00:00:02|1|128Mn|1340K|344240K|0|0
-COMPLETED||00:00:02|00:00:02|1|128Mn|984K|278348K|0|0"""
+        return """State|Timelimit|Elapsed|CPUTime|TotalCPU|ReqMem|MaxRSS|MaxVMSize|MaxDiskRead|MaxDiskWrite
+COMPLETED|00:01:00|00:00:02|00:00:02|00:00.208|128Mn||||
+COMPLETED||00:00:02|00:00:02|00:00.207|128Mn|1340K|344240K|0|0
+COMPLETED||00:00:02|00:00:02|00:00:00|128Mn|984K|278348K|0|0
+"""
     setattr(job, "_cluster_account_command", return_accounting)
     return job
 
