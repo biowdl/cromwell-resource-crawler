@@ -203,8 +203,9 @@ class SlurmJob(Job):
     @staticmethod
     def cluster_properties() -> List[str]:
         """These values are queried from sacct and reported in this order."""
-        return ["State", "Timelimit", "Elapsed", "CPUTime", "ReqCPUS",
-                "ReqMem", "MaxRSS", "MaxVMSize", "MaxDiskRead", "MaxDiskWrite"]
+        return ["State", "Timelimit", "Elapsed", "CPUTime", "TotalCPU",
+                "ReqCPUS", "ReqMem", "MaxRSS", "MaxVMSize", "MaxDiskRead",
+                "MaxDiskWrite"]
 
     def property_order(self) -> List[str]:
         super_order = super().property_order()
@@ -224,7 +225,7 @@ class SlurmJob(Job):
                         "MaxDiskWrite"]:
                 size = props[key]
                 props[key] = naturalsize(size, binary=True)
-            for key in ["Timelimit", "Elapsed", "CPUTime"]:
+            for key in ["Timelimit", "Elapsed", "CPUTime", "TotalCPU"]:
                 seconds = props[key]
                 props[key] = str(datetime.timedelta(seconds=seconds))
         return props
