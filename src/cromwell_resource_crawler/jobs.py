@@ -294,13 +294,14 @@ class SlurmJob(Job):
             minutes_seconds, microseconds = value.split(".")
             days = 0
             hours = 0
-            minutes, seconds = minutes_seconds.split(":")
+            minutes, seconds = (int(x) for x in minutes_seconds.split(":"))
         else:
             if "-" in value:
-                days, time = value.split("-")
+                days_time = value.split("-")
+                days = int(days_time[0])
+                time = days_time[1]
             else:
                 days = 0
                 time = value
-            hours, minutes, seconds = time.split(":")
-        return (int(days) * 24 * 3600 + int(hours) * 3600 + int(minutes) * 60 +
-                int(seconds))
+            hours, minutes, seconds = (int(x) for x in time.split(":"))
+        return days * 24 * 3600 + hours * 3600 + minutes * 60 + seconds
