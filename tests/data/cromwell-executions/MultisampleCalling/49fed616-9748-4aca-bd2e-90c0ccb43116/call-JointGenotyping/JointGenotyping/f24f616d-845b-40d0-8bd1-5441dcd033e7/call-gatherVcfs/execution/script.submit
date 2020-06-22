@@ -1,0 +1,20 @@
+#!/bin/bash
+# make sure there is no preexisting Docker CID file
+rm -f /tmp/pytest_workflow_qgzpzxzj/two_sample_gender_aware/cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-JointGenotyping/JointGenotyping/f24f616d-845b-40d0-8bd1-5441dcd033e7/call-gatherVcfs/execution/docker_cid
+# run as in the original configuration without --rm flag (will remove later)
+docker run \
+  --cidfile /tmp/pytest_workflow_qgzpzxzj/two_sample_gender_aware/cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-JointGenotyping/JointGenotyping/f24f616d-845b-40d0-8bd1-5441dcd033e7/call-gatherVcfs/execution/docker_cid \
+  -i \
+  --user $EUID \
+  --entrypoint /bin/bash \
+  -v /tmp/pytest_workflow_qgzpzxzj/two_sample_gender_aware/cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-JointGenotyping/JointGenotyping/f24f616d-845b-40d0-8bd1-5441dcd033e7/call-gatherVcfs:/cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-JointGenotyping/JointGenotyping/f24f616d-845b-40d0-8bd1-5441dcd033e7/call-gatherVcfs:delegated \
+  quay.io/biocontainers/picard@sha256:93852f987fa73839e6f6eb1ecb7cfdfeb06135b789589be1a60c3dffcaf67f56 /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-JointGenotyping/JointGenotyping/f24f616d-845b-40d0-8bd1-5441dcd033e7/call-gatherVcfs/execution/script
+
+# get the return code (working even if the container was detached)
+rc=$(docker wait `cat /tmp/pytest_workflow_qgzpzxzj/two_sample_gender_aware/cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-JointGenotyping/JointGenotyping/f24f616d-845b-40d0-8bd1-5441dcd033e7/call-gatherVcfs/execution/docker_cid`)
+
+# remove the container after waiting
+docker rm `cat /tmp/pytest_workflow_qgzpzxzj/two_sample_gender_aware/cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-JointGenotyping/JointGenotyping/f24f616d-845b-40d0-8bd1-5441dcd033e7/call-gatherVcfs/execution/docker_cid`
+
+# return exit code
+exit $rc

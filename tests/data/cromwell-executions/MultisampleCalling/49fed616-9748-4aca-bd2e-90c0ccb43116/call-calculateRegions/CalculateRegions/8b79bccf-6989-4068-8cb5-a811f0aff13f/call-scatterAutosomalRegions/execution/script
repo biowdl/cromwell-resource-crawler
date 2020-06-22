@@ -1,0 +1,58 @@
+#!/bin/bash
+
+cd /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-calculateRegions/CalculateRegions/8b79bccf-6989-4068-8cb5-a811f0aff13f/call-scatterAutosomalRegions/execution
+tmpDir=$(mkdir -p "/cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-calculateRegions/CalculateRegions/8b79bccf-6989-4068-8cb5-a811f0aff13f/call-scatterAutosomalRegions/tmp.3aebba3c" && echo "/cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-calculateRegions/CalculateRegions/8b79bccf-6989-4068-8cb5-a811f0aff13f/call-scatterAutosomalRegions/tmp.3aebba3c")
+chmod 777 "$tmpDir"
+export _JAVA_OPTIONS=-Djava.io.tmpdir="$tmpDir"
+export TMPDIR="$tmpDir"
+export HOME="$HOME"
+(
+cd /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-calculateRegions/CalculateRegions/8b79bccf-6989-4068-8cb5-a811f0aff13f/call-scatterAutosomalRegions/execution
+
+)
+out8b79bccf="${tmpDir}/out.$$" err8b79bccf="${tmpDir}/err.$$"
+mkfifo "$out8b79bccf" "$err8b79bccf"
+trap 'rm "$out8b79bccf" "$err8b79bccf"' EXIT
+tee '/cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-calculateRegions/CalculateRegions/8b79bccf-6989-4068-8cb5-a811f0aff13f/call-scatterAutosomalRegions/execution/stdout' < "$out8b79bccf" &
+tee '/cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-calculateRegions/CalculateRegions/8b79bccf-6989-4068-8cb5-a811f0aff13f/call-scatterAutosomalRegions/execution/stderr' < "$err8b79bccf" >&2 &
+(
+cd /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-calculateRegions/CalculateRegions/8b79bccf-6989-4068-8cb5-a811f0aff13f/call-scatterAutosomalRegions/execution
+
+
+set -e -o pipefail
+mkdir -p scatters
+biopet-scatterregions -Xmx8G \
+  -R /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-calculateRegions/CalculateRegions/8b79bccf-6989-4068-8cb5-a811f0aff13f/call-scatterAutosomalRegions/inputs/1489649706/reference.fasta \
+  -o scatters \
+  -s 1000000000 \
+  -L /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-calculateRegions/CalculateRegions/8b79bccf-6989-4068-8cb5-a811f0aff13f/call-scatterAutosomalRegions/inputs/-1766811521/autosomal_regions.bed \
+   \
+  
+
+# Glob messes with order of scatters (10 comes before 1), which causes
+# problems at gatherGvcfs
+# Therefore we reorder the scatters with python.
+python << CODE
+import os
+scatters = os.listdir("scatters")
+splitext = [ x.split(".") for x in scatters]
+splitnum = [x.split("-") + [y] for x,y in splitext]
+ordered = sorted(splitnum, key=lambda x: int(x[1]))
+merged = ["scatters/{}-{}.{}".format(x[0],x[1],x[2]) for x in ordered]
+for x in merged:
+  print(x)
+CODE
+)  > "$out8b79bccf" 2> "$err8b79bccf"
+echo $? > /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-calculateRegions/CalculateRegions/8b79bccf-6989-4068-8cb5-a811f0aff13f/call-scatterAutosomalRegions/execution/rc.tmp
+(
+# add a .file in every empty directory to facilitate directory delocalization on the cloud
+cd /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-calculateRegions/CalculateRegions/8b79bccf-6989-4068-8cb5-a811f0aff13f/call-scatterAutosomalRegions/execution
+find . -type d -exec sh -c '[ -z "$(ls -A '"'"'{}'"'"')" ] && touch '"'"'{}'"'"'/.file' \;
+)
+(
+cd /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-calculateRegions/CalculateRegions/8b79bccf-6989-4068-8cb5-a811f0aff13f/call-scatterAutosomalRegions/execution
+sync
+
+
+)
+mv /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-calculateRegions/CalculateRegions/8b79bccf-6989-4068-8cb5-a811f0aff13f/call-scatterAutosomalRegions/execution/rc.tmp /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-calculateRegions/CalculateRegions/8b79bccf-6989-4068-8cb5-a811f0aff13f/call-scatterAutosomalRegions/execution/rc

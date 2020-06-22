@@ -1,0 +1,32 @@
+#!/bin/bash
+# Singularity pull image. 
+if [ -z $SINGULARITY_CACHEDIR ]; 
+    then FLAGS="--cache-dir singularity-cache"
+    else FLAGS=""
+fi
+SINGULARITY=/share/software/singularity/3.5.3/bin/singularity
+IMAGE=$(/home/user/common/programs/singularity_permanent_cache.py -s $SINGULARITY $FLAGS -v docker://quay.io/biocontainers/biowdl-input-converter:0.2.1--py_0)
+
+# Partition selection
+PARTITION=all
+MEMORY=134217728
+if [ 1 -lt 60 ]; then PARTITION=short; fi
+if [ $MEMORY -gt 107374182400 ] ; then PARTITION=highmem ; fi
+
+# Job submission
+sbatch \
+--partition=$PARTITION \
+--job-name="cromwell_82f8c9a5_ConvertDockerTagsFile" \
+--chdir="/home/user/analysis/src/08-rna-genotyping/cromwell-executions/RNAseq/82f8c9a5-384c-46fd-8ca0-fc2909f8922c/call-ConvertDockerTagsFile" \
+--time="1" \
+--cpus-per-task="1" \
+--mem=$(echo "$MEMORY / 1024^2" | bc) \
+--output="/home/user/analysis/src/08-rna-genotyping/cromwell-executions/RNAseq/82f8c9a5-384c-46fd-8ca0-fc2909f8922c/call-ConvertDockerTagsFile/execution/stdout" \
+--error="/home/user/analysis/src/08-rna-genotyping/cromwell-executions/RNAseq/82f8c9a5-384c-46fd-8ca0-fc2909f8922c/call-ConvertDockerTagsFile/execution/stderr" \
+--wrap \
+"$SINGULARITY exec --containall --bind /exports,/home/user/analysis/src/08-rna-genotyping/cromwell-executions/RNAseq/82f8c9a5-384c-46fd-8ca0-fc2909f8922c/call-ConvertDockerTagsFile:/cromwell-executions/RNAseq/82f8c9a5-384c-46fd-8ca0-fc2909f8922c/call-ConvertDockerTagsFile $IMAGE sh /home/user/analysis/src/08-rna-genotyping/cromwell-executions/RNAseq/82f8c9a5-384c-46fd-8ca0-fc2909f8922c/call-ConvertDockerTagsFile/execution/script
+rc=$?
+if [ ! -f /home/user/analysis/src/08-rna-genotyping/cromwell-executions/RNAseq/82f8c9a5-384c-46fd-8ca0-fc2909f8922c/call-ConvertDockerTagsFile/execution/rc ]
+  then
+    echo "$rc" > /home/user/analysis/src/08-rna-genotyping/cromwell-executions/RNAseq/82f8c9a5-384c-46fd-8ca0-fc2909f8922c/call-ConvertDockerTagsFile/execution/rc
+fi"

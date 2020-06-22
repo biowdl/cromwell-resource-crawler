@@ -1,0 +1,42 @@
+#!/bin/bash
+
+cd /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-JointGenotyping/JointGenotyping/f24f616d-845b-40d0-8bd1-5441dcd033e7/call-gatherGvcfs/execution
+tmpDir=$(mkdir -p "/cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-JointGenotyping/JointGenotyping/f24f616d-845b-40d0-8bd1-5441dcd033e7/call-gatherGvcfs/tmp.e26a9d9d" && echo "/cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-JointGenotyping/JointGenotyping/f24f616d-845b-40d0-8bd1-5441dcd033e7/call-gatherGvcfs/tmp.e26a9d9d")
+chmod 777 "$tmpDir"
+export _JAVA_OPTIONS=-Djava.io.tmpdir="$tmpDir"
+export TMPDIR="$tmpDir"
+export HOME="$HOME"
+(
+cd /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-JointGenotyping/JointGenotyping/f24f616d-845b-40d0-8bd1-5441dcd033e7/call-gatherGvcfs/execution
+
+)
+outf24f616d="${tmpDir}/out.$$" errf24f616d="${tmpDir}/err.$$"
+mkfifo "$outf24f616d" "$errf24f616d"
+trap 'rm "$outf24f616d" "$errf24f616d"' EXIT
+tee '/cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-JointGenotyping/JointGenotyping/f24f616d-845b-40d0-8bd1-5441dcd033e7/call-gatherGvcfs/execution/stdout' < "$outf24f616d" &
+tee '/cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-JointGenotyping/JointGenotyping/f24f616d-845b-40d0-8bd1-5441dcd033e7/call-gatherGvcfs/execution/stderr' < "$errf24f616d" >&2 &
+(
+cd /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-JointGenotyping/JointGenotyping/f24f616d-845b-40d0-8bd1-5441dcd033e7/call-gatherGvcfs/execution
+
+
+set -e
+mkdir -p "$(dirname ./multisample.g.vcf.gz)"
+gatk --java-options -Xmx12G \
+CombineGVCFs \
+-R /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-JointGenotyping/JointGenotyping/f24f616d-845b-40d0-8bd1-5441dcd033e7/call-gatherGvcfs/inputs/1489649706/reference.fasta \
+-O ./multisample.g.vcf.gz \
+-V /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-JointGenotyping/JointGenotyping/f24f616d-845b-40d0-8bd1-5441dcd033e7/call-gatherGvcfs/inputs/800802020/male.g.vcf.gz -V /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-JointGenotyping/JointGenotyping/f24f616d-845b-40d0-8bd1-5441dcd033e7/call-gatherGvcfs/inputs/-722855258/Y.g.vcf.gz -V /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-JointGenotyping/JointGenotyping/f24f616d-845b-40d0-8bd1-5441dcd033e7/call-gatherGvcfs/inputs/1460821669/X.g.vcf.gz -V /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-JointGenotyping/JointGenotyping/f24f616d-845b-40d0-8bd1-5441dcd033e7/call-gatherGvcfs/inputs/2008355744/female.g.vcf.gz -V /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-JointGenotyping/JointGenotyping/f24f616d-845b-40d0-8bd1-5441dcd033e7/call-gatherGvcfs/inputs/-1314264190/X.g.vcf.gz \
+)  > "$outf24f616d" 2> "$errf24f616d"
+echo $? > /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-JointGenotyping/JointGenotyping/f24f616d-845b-40d0-8bd1-5441dcd033e7/call-gatherGvcfs/execution/rc.tmp
+(
+# add a .file in every empty directory to facilitate directory delocalization on the cloud
+cd /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-JointGenotyping/JointGenotyping/f24f616d-845b-40d0-8bd1-5441dcd033e7/call-gatherGvcfs/execution
+find . -type d -exec sh -c '[ -z "$(ls -A '"'"'{}'"'"')" ] && touch '"'"'{}'"'"'/.file' \;
+)
+(
+cd /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-JointGenotyping/JointGenotyping/f24f616d-845b-40d0-8bd1-5441dcd033e7/call-gatherGvcfs/execution
+sync
+
+
+)
+mv /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-JointGenotyping/JointGenotyping/f24f616d-845b-40d0-8bd1-5441dcd033e7/call-gatherGvcfs/execution/rc.tmp /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-JointGenotyping/JointGenotyping/f24f616d-845b-40d0-8bd1-5441dcd033e7/call-gatherGvcfs/execution/rc

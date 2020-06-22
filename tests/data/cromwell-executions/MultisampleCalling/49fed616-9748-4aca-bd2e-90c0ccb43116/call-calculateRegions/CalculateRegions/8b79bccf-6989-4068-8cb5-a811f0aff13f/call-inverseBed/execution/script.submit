@@ -1,0 +1,20 @@
+#!/bin/bash
+# make sure there is no preexisting Docker CID file
+rm -f /tmp/pytest_workflow_qgzpzxzj/two_sample_gender_aware/cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-calculateRegions/CalculateRegions/8b79bccf-6989-4068-8cb5-a811f0aff13f/call-inverseBed/execution/docker_cid
+# run as in the original configuration without --rm flag (will remove later)
+docker run \
+  --cidfile /tmp/pytest_workflow_qgzpzxzj/two_sample_gender_aware/cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-calculateRegions/CalculateRegions/8b79bccf-6989-4068-8cb5-a811f0aff13f/call-inverseBed/execution/docker_cid \
+  -i \
+  --user $EUID \
+  --entrypoint /bin/bash \
+  -v /tmp/pytest_workflow_qgzpzxzj/two_sample_gender_aware/cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-calculateRegions/CalculateRegions/8b79bccf-6989-4068-8cb5-a811f0aff13f/call-inverseBed:/cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-calculateRegions/CalculateRegions/8b79bccf-6989-4068-8cb5-a811f0aff13f/call-inverseBed:delegated \
+  quay.io/biocontainers/bedtools@sha256:66fda80328596c90aa307a19031b2831367d0956c2f9c6e37060226426eb5a04 /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-calculateRegions/CalculateRegions/8b79bccf-6989-4068-8cb5-a811f0aff13f/call-inverseBed/execution/script
+
+# get the return code (working even if the container was detached)
+rc=$(docker wait `cat /tmp/pytest_workflow_qgzpzxzj/two_sample_gender_aware/cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-calculateRegions/CalculateRegions/8b79bccf-6989-4068-8cb5-a811f0aff13f/call-inverseBed/execution/docker_cid`)
+
+# remove the container after waiting
+docker rm `cat /tmp/pytest_workflow_qgzpzxzj/two_sample_gender_aware/cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-calculateRegions/CalculateRegions/8b79bccf-6989-4068-8cb5-a811f0aff13f/call-inverseBed/execution/docker_cid`
+
+# return exit code
+exit $rc

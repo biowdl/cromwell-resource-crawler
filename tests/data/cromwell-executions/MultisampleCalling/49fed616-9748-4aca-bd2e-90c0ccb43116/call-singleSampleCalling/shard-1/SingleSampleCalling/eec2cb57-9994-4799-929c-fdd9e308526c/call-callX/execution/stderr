@@ -1,0 +1,48 @@
+Picked up _JAVA_OPTIONS: -Djava.io.tmpdir=/cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-singleSampleCalling/shard-1/SingleSampleCalling/eec2cb57-9994-4799-929c-fdd9e308526c/call-callX/tmp.ae32dfc8
+13:02:30.609 INFO  NativeLibraryLoader - Loading libgkl_compression.so from jar:file:/usr/local/share/gatk4-4.1.0.0-0/gatk-package-4.1.0.0-local.jar!/com/intel/gkl/native/libgkl_compression.so
+13:02:32.414 INFO  HaplotypeCaller - ------------------------------------------------------------
+13:02:32.414 INFO  HaplotypeCaller - The Genome Analysis Toolkit (GATK) v4.1.0.0
+13:02:32.415 INFO  HaplotypeCaller - For support and documentation go to https://software.broadinstitute.org/gatk/
+13:02:32.415 INFO  HaplotypeCaller - Executing as ?@f83bb0309497 on Linux v4.19.0-9-amd64 amd64
+13:02:32.416 INFO  HaplotypeCaller - Java runtime: OpenJDK 64-Bit Server VM v1.8.0_192-b01
+13:02:32.416 INFO  HaplotypeCaller - Start Date/Time: June 4, 2020 1:02:30 PM GMT
+13:02:32.416 INFO  HaplotypeCaller - ------------------------------------------------------------
+13:02:32.416 INFO  HaplotypeCaller - ------------------------------------------------------------
+13:02:32.417 INFO  HaplotypeCaller - HTSJDK Version: 2.18.2
+13:02:32.417 INFO  HaplotypeCaller - Picard Version: 2.18.25
+13:02:32.417 INFO  HaplotypeCaller - HTSJDK Defaults.COMPRESSION_LEVEL : 2
+13:02:32.417 INFO  HaplotypeCaller - HTSJDK Defaults.USE_ASYNC_IO_READ_FOR_SAMTOOLS : false
+13:02:32.417 INFO  HaplotypeCaller - HTSJDK Defaults.USE_ASYNC_IO_WRITE_FOR_SAMTOOLS : true
+13:02:32.417 INFO  HaplotypeCaller - HTSJDK Defaults.USE_ASYNC_IO_WRITE_FOR_TRIBBLE : false
+13:02:32.417 INFO  HaplotypeCaller - Deflater: IntelDeflater
+13:02:32.417 INFO  HaplotypeCaller - Inflater: IntelInflater
+13:02:32.417 INFO  HaplotypeCaller - GCS max retries/reopens: 20
+13:02:32.417 INFO  HaplotypeCaller - Requester pays: disabled
+13:02:32.417 INFO  HaplotypeCaller - Initializing engine
+13:02:32.811 INFO  FeatureManager - Using codec VCFCodec to read file file:///cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-singleSampleCalling/shard-1/SingleSampleCalling/eec2cb57-9994-4799-929c-fdd9e308526c/call-callX/inputs/1489649706/expected.vcf.gz
+13:02:32.835 INFO  FeatureManager - Using codec BEDCodec to read file file:///cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-singleSampleCalling/shard-1/SingleSampleCalling/eec2cb57-9994-4799-929c-fdd9e308526c/call-callX/inputs/1489649706/x_non_par.bed
+13:02:32.844 INFO  IntervalArgumentCollection - Processing 5000 bp from intervals
+13:02:32.863 INFO  HaplotypeCaller - Done initializing engine
+13:02:32.864 INFO  HaplotypeCallerEngine - Tool is in reference confidence mode and the annotation, the following changes will be made to any specified annotations: 'StrandBiasBySample' will be enabled. 'ChromosomeCounts', 'FisherStrand', 'StrandOddsRatio' and 'QualByDepth' annotations have been disabled
+13:02:32.886 INFO  HaplotypeCallerEngine - Standard Emitting and Calling confidence set to 0.0 for reference-model confidence output
+13:02:32.886 INFO  HaplotypeCallerEngine - All sites annotated with PLs forced to true for reference-model confidence output
+13:02:32.910 INFO  NativeLibraryLoader - Loading libgkl_utils.so from jar:file:/usr/local/share/gatk4-4.1.0.0-0/gatk-package-4.1.0.0-local.jar!/com/intel/gkl/native/libgkl_utils.so
+13:02:32.911 INFO  NativeLibraryLoader - Loading libgkl_pairhmm_omp.so from jar:file:/usr/local/share/gatk4-4.1.0.0-0/gatk-package-4.1.0.0-local.jar!/com/intel/gkl/native/libgkl_pairhmm_omp.so
+13:02:32.951 INFO  IntelPairHmm - Flush-to-zero (FTZ) is enabled when running PairHMM
+13:02:32.952 INFO  IntelPairHmm - Available threads: 12
+13:02:32.952 INFO  IntelPairHmm - Requested threads: 4
+13:02:32.952 INFO  PairHMM - Using the OpenMP multi-threaded AVX-accelerated native PairHMM implementation
+13:02:33.041 INFO  ProgressMeter - Starting traversal
+13:02:33.052 INFO  ProgressMeter -        Current Locus  Elapsed Minutes     Regions Processed   Regions/Minute
+13:02:37.634 INFO  HaplotypeCaller - No reads filtered by: ((((((((MappingQualityReadFilter AND MappingQualityAvailableReadFilter) AND MappedReadFilter) AND NotSecondaryAlignmentReadFilter) AND NotDuplicateReadFilter) AND PassesVendorQualityCheckReadFilter) AND NonZeroReferenceLengthAlignmentReadFilter) AND GoodCigarReadFilter) AND WellformedReadFilter)
+13:02:37.635 INFO  ProgressMeter -               X:8638              0.1                    27            353.6
+13:02:37.635 INFO  ProgressMeter - Traversal complete. Processed 27 total regions in 0.1 minutes.
+13:02:37.639 INFO  VectorLoglessPairHMM - Time spent in setup for JNI call : 0.003052697
+13:02:37.639 INFO  PairHMM - Total compute time in PairHMM computeLogLikelihoods() : 0.2623704
+13:02:37.639 INFO  SmithWatermanAligner - Total compute time in java Smith-Waterman : 0.06 sec
+13:02:37.639 INFO  HaplotypeCaller - Shutting down engine
+[June 4, 2020 1:02:37 PM GMT] org.broadinstitute.hellbender.tools.walkers.haplotypecaller.HaplotypeCaller done. Elapsed time: 0.12 minutes.
+Runtime.totalMemory()=693633024
+Using GATK jar /usr/local/share/gatk4-4.1.0.0-0/gatk-package-4.1.0.0-local.jar
+Running:
+    java -Dsamjdk.use_async_io_read_samtools=false -Dsamjdk.use_async_io_write_samtools=true -Dsamjdk.use_async_io_write_tribble=false -Dsamjdk.compression_level=2 -Xmx4G -jar /usr/local/share/gatk4-4.1.0.0-0/gatk-package-4.1.0.0-local.jar HaplotypeCaller -R /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-singleSampleCalling/shard-1/SingleSampleCalling/eec2cb57-9994-4799-929c-fdd9e308526c/call-callX/inputs/1489649706/reference.fasta -O ./samples//female/scatters//X.g.vcf.gz -I /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-singleSampleCalling/shard-1/SingleSampleCalling/eec2cb57-9994-4799-929c-fdd9e308526c/call-callX/inputs/1489649706/female.bam --sample-ploidy 2 -L /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-singleSampleCalling/shard-1/SingleSampleCalling/eec2cb57-9994-4799-929c-fdd9e308526c/call-callX/inputs/1489649706/x_non_par.bed -D /cromwell-executions/MultisampleCalling/49fed616-9748-4aca-bd2e-90c0ccb43116/call-singleSampleCalling/shard-1/SingleSampleCalling/eec2cb57-9994-4799-929c-fdd9e308526c/call-callX/inputs/1489649706/expected.vcf.gz --emit-ref-confidence GVCF

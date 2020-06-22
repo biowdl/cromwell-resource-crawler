@@ -1,0 +1,3 @@
+INFO:root:Cache dir from environment: /home/user/singularity/cache/permanent_cache
+INFO:root:Waiting for file lock on: /home/user/singularity/cache/permanent_cache/.lock
+INFO:root:Image exists already at: /home/user/singularity/cache/permanent_cache/docker_quay.io_biocontainers_biowdl-input-converter_0.2.sif
