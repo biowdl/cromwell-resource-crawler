@@ -110,7 +110,9 @@ def argument_parser() -> argparse.ArgumentParser:
                              "This determines how the resource usages are "
                              "acquired.")
     parser.add_argument("-f", "--format", type=str,
-                        choices=["json", "tsv"], default="tsv")
+                        choices=["json", "tsv"], default="tsv",
+                        help="Which output format should be used. "
+                             "Default: tsv.")
     parser.add_argument("-o", "--output", default=DEFAULT_OUTPUT,
                         required=not bool(DEFAULT_OUTPUT),
                         help=f"Output file to use. Default: "
