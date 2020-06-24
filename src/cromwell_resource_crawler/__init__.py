@@ -43,7 +43,7 @@ def crawl_folder(folder: Path, jobclass: Type[Job] = LocalJob
         # calculate resource requirements
         return
     elif Path(folder, "execution").exists():
-        if not Path(folder, "exection", "rc").exists():
+        if not Path(folder, "execution", "rc").exists():
             # This job is not yet finished.
             return
         yield jobclass(folder)
