@@ -47,9 +47,9 @@ def crawl_folder(folder: Path, jobclass: Type[Job] = LocalJob
             # This job is not yet finished.
             return
         yield jobclass(folder)
-        for folder in folder.iterdir():
-            if folder.name.startswith("attempt-"):
-                yield jobclass(folder)
+        for inner_folder in folder.iterdir():
+            if inner_folder.name.startswith("attempt-"):
+                yield from crawl_folder(Path(inner_folder), jobclass)
     else:
         for dir_entry in os.scandir(folder):  # type: os.DirEntry
             if dir_entry.is_dir():
