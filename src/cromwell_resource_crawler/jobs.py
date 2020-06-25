@@ -211,7 +211,8 @@ class SlurmJob(Job):
 
     def cluster_properties(self) -> List[str]:
         """These values are queried from sacct and reported in this order."""
-        return ["State"] + self._time_props + ["ReqCPUS"] + self._size_props
+        return (["State", "NodeList"] + self._time_props + ["ReqCPUS"] +
+                self._size_props)
 
     def property_order(self) -> List[str]:
         super_order = super().property_order()
