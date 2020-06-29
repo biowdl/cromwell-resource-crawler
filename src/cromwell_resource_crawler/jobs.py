@@ -38,7 +38,7 @@ def cromwell_execution_folder_reserved_files() -> Set[str]:
     """
     reserved_files: Set[str] = set()
     prefixes = ["stdout", "script", "stderr"]
-    suffixes = ["", ".submit", ".check", ".background"]
+    suffixes = ["", ".submit", ".check", ".background", ".kill"]
     for prefix in prefixes:
         for suffix in suffixes:
             reserved_files.add(prefix + suffix)
