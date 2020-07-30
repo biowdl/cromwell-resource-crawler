@@ -18,6 +18,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import datetime
+import os
+import tempfile
+import time
+from pathlib import Path
+
 from cromwell_resource_crawler.jobs import LocalJob, SlurmJob
 
 import pytest
@@ -79,3 +85,40 @@ def test_properties_raw(slurmjob):
     props = slurmjob.get_properties(False)
     assert props["CPUTime"] == 2
     assert props["MaxRSS"] == 1372160
+
+
+def test_local_runtime():
+    # Create a temporary folder for the mock execution structure
+    with tempfile.TemporaryDirectory(prefix="call-") as job:
+        # Create the execution folder
+        execution = os.path.join(job, "execution")
+        os.mkdir(execution)
+
+        # Create the script.submit file
+        script_submit = os.path.join(execution, "script.submit")
+        with open(script_submit, 'w') as fin:
+            pass
+
+        # Sleep for 1.5 seconds
+        time.sleep(1.5)
+
+        # Create the rc file
+        rc = os.path.join(execution, "rc")
+        with open(rc, 'w') as fin:
+            print("0", file=fin)
+
+        jobfolder = LocalJob(Path(job))
+
+        props = jobfolder.get_properties(False)
+        # If we slept for 1.5 seconds, time should at least be 1, independent
+        # of what the OS has been doing in the mean time
+        assert props["Elapsed"] >= 1
+
+        # Get the runtime in human readable format
+        props = jobfolder.get_properties(True)
+        human_time = time.strptime(props["Elapsed"], '%H:%M:%S')
+        # Convert it back to seconds
+        seconds = datetime.timedelta(hours=human_time.tm_hour,
+                                     minutes=human_time.tm_min,
+                                     seconds=human_time.tm_sec).total_seconds()
+        assert seconds >= 1
