@@ -225,7 +225,7 @@ class SlurmJob(Job):
         except SlurmError:
             # Don't crash if one of the jobs cannot be found.
             # Return basic properties instead.
-            return props
+            pass
         if human_readable:
             for key in self._size_props:
                 size = props[key]
