@@ -18,11 +18,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import os
 import datetime
+import os
 import tempfile
 import time
-
 from pathlib import Path
 
 from cromwell_resource_crawler.jobs import LocalJob, SlurmJob
@@ -111,8 +110,8 @@ def test_local_runtime():
         jobfolder = LocalJob(Path(job))
 
         props = jobfolder.get_properties(False)
-        # If we slept for 1.5 seconds, time should at least be 1, independent of
-        # what the OS has been doing in the mean time
+        # If we slept for 1.5 seconds, time should at least be 1, independent
+        # of what the OS has been doing in the mean time
         assert props["Elapsed"] >= 1
 
         # Get the runtime in human readable format
@@ -120,6 +119,6 @@ def test_local_runtime():
         human_time = time.strptime(props["Elapsed"], '%H:%M:%S')
         # Convert it back to seconds
         seconds = datetime.timedelta(hours=human_time.tm_hour,
-                minutes=human_time.tm_min,
-                seconds=human_time.tm_sec).total_seconds()
+                                     minutes=human_time.tm_min,
+                                     seconds=human_time.tm_sec).total_seconds()
         assert seconds >= 1
