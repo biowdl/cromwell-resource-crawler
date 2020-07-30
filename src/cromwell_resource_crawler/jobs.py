@@ -80,6 +80,10 @@ class Job(abc.ABC):
         """
         return ["Name", "ExitCode", "Inputs", "Outputs", "Path"]
 
+    @property
+    def _time_props(self):
+        return ["Elapsed"]
+
     @abstractmethod
     def get_properties(self, human_readable: bool) -> Dict[str, Any]:
         """
@@ -173,10 +177,27 @@ class Job(abc.ABC):
 class LocalJob(Job):
     """A Job-type class for jobs that have been locally."""
     def property_order(self) -> List[str]:
-        return super().property_order()
+        return super().property_order() + ["Elapsed"]
+
+    def get_runtime(self) -> int:
+        """
+        Estimate the runtime of the current job
+
+        We do this by checking the age of the submit script and the rc file
+        """
+        script_submit = self.execution_folder / "script.submit"
+        rc = self.execution_folder / "rc"
+        return int(os.path.getmtime(rc) - os.path.getmtime(script_submit))
 
     def get_properties(self, human_readable: bool):
-        return super().get_properties(human_readable)
+        props = super().get_properties(human_readable)
+        props["Elapsed"] = self.get_runtime()
+
+        if human_readable:
+            for key in self._time_props:
+                seconds = props[key]
+                props[key] = str(datetime.timedelta(seconds=seconds))
+        return props
 
 
 DEFAULT_SLURM_JOB_REGEX = re.compile(r"Submitted batch job (\d+).*")
