@@ -165,7 +165,11 @@ class Job(abc.ABC):
                 for path in files if path.exists()}
 
     def get_exit_code(self) -> int:
-        return int(Path(self.execution_folder, "rc").read_text())
+        try:
+            return int(Path(self.execution_folder, "rc").read_text())
+        # If there is no file, we assume it failed
+        except FileNotFoundError:
+            return 1
 
     def _get_name(self) -> str:
         for name in reversed(self.path.parts):
